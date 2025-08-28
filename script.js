@@ -1,8 +1,7 @@
-// script.js  (temiz final)
-// Canlı ortam: Render URL
+
 const API_BASE = "https://aquarium-chatbot.onrender.com";
 
-// ---- CHAT ----
+
 export async function sendMessage(msg) {
   try {
     const r = await fetch(`${API_BASE}/chat`, {
@@ -43,7 +42,7 @@ export function bindRegisterForm() {
   });
 }
 
-// ---- LOGIN ----
+
 export function bindLoginForm() {
   const form = document.getElementById("loginForm");
   if (!form) return;
@@ -68,7 +67,7 @@ export function bindLoginForm() {
   });
 }
 
-// ---- FEEDBACK ----
+
 export function bindFeedbackForm() {
   const form = document.getElementById("feedbackForm");
   if (!form) return;

@@ -1,41 +1,95 @@
-<<<<<<< HEAD
-const API_BASE = "https://aquarium-chatbot.onrender.com"; // Render'daki servis URL'in
+// script.js  (temiz final)
+// Canlı ortam: Render URL
+const API_BASE = "https://aquarium-chatbot.onrender.com";
 
-async function sendMessage(msg) {
-  const r = await fetch(`${API_BASE}/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message: msg })
-  });
-  const data = await r.json();
-  return data.reply || "Server unavailable!";
-=======
-function registerUser() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
-
-  localStorage.setItem("user", username);
-  localStorage.setItem("pass", password);
-
-  alert("✅ Registered successfully!");
-  window.location.href = "login.html";
-  return false;
+// ---- CHAT ----
+export async function sendMessage(msg) {
+  try {
+    const r = await fetch(`${API_BASE}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    return data.reply || "No reply";
+  } catch (e) {
+    return `Error: ${e.message}`;
+  }
 }
 
-function loginUser() {
-  const username = document.getElementById("login-username").value;
-  const password = document.getElementById("login-password").value;
+// ---- REGISTER ----
+export function bindRegisterForm() {
+  const form = document.getElementById("registerForm");
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = form.username.value.trim();
+    const password = form.password.value.trim();
+    try {
+      const r = await fetch(`${API_BASE}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      alert("✅ Registered!");
+      localStorage.setItem("user", username);
+      location.href = "login.html";
+    } catch (err) {
+      alert("❌ " + err.message);
+    }
+  });
+}
 
-  const storedUser = localStorage.getItem("user");
-  const storedPass = localStorage.getItem("pass");
+// ---- LOGIN ----
+export function bindLoginForm() {
+  const form = document.getElementById("loginForm");
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = form.username.value.trim();
+    const password = form.password.value.trim();
+    try {
+      const r = await fetch(`${API_BASE}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      alert("✅ Welcome " + data.user.username);
+      localStorage.setItem("user", data.user.username);
+      location.href = "Chatbot.html";
+    } catch (err) {
+      alert("❌ " + err.message);
+    }
+  });
+}
 
-  if (username === storedUser && password === storedPass) {
-    alert("✅ Login successful!");
-    window.location.href = "Chatbot.html";
-  } else {
-    alert("❌ Incorrect username or password.");
-  }
-
-  return false;
->>>>>>> c171be5 (fix: auth/login/feedback; switch to sqlite3; working chat API; frontend fetch)
+// ---- FEEDBACK ----
+export function bindFeedbackForm() {
+  const form = document.getElementById("feedbackForm");
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: form.name.value.trim(),
+      email: form.email.value.trim(),
+      message: form.message.value.trim()
+    };
+    try {
+      const r = await fetch(`${API_BASE}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+      location.href = "thanks.html";
+    } catch (err) {
+      alert("❌ " + err.message);
+    }
+  });
 }

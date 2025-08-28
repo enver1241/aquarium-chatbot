@@ -1,19 +1,4 @@
 {
-<<<<<<< HEAD
-  "name": "aquachatbot",
-  "version": "1.0.0",
-  "type": "module",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "NODE_ENV=development node server.js"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^4.21.2",
-    "openai": "^4.56.0"
-=======
   "name": "aquachatbotapp",
   "version": "1.0.0",
   "scripts": { "start": "node server.js" },
@@ -23,6 +8,5 @@
     "express": "^4.21.2",
     "openai": "^4.56.0",
     "sqlite3": "^5.1.7"
->>>>>>> c171be5 (fix: auth/login/feedback; switch to sqlite3; working chat API; frontend fetch)
   }
 }

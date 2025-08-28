@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const sqlite3 = require("sqlite3").verbose();
@@ -5,83 +6,99 @@ const { OpenAI } = require("openai");
 require("dotenv").config();
 
 const app = express();
-app.use(cors({ origin: true }));
+app.use(cors());
+app.options("*", cors());
+app.use(express.json());
+app.use(cors());
+app.options("*", cors());
 app.use(express.json());
 
-// DB
-const db = new sqlite3.Database("./db.sqlite");
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL
-  )`);
-  db.run(`CREATE TABLE IF NOT EXISTS feedback (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    email TEXT,
-    message TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-});
 
-// Health
-app.get("/", (_req, res) => res.send("ok"));
 
-// Register
-app.post("/register", (req, res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: "Missing fields" });
-  db.run("INSERT INTO users (username,password) VALUES (?,?)", [username,password], function(err){
-    if (err) {
-      if (String(err).includes("UNIQUE")) return res.status(409).json({ error: "User exists" });
-      return res.status(500).json({ error: "DB error" });
-    }
-    res.json({ ok:true, id:this.lastID });
-  });
-});
-
-// Login
-app.post("/login", (req,res)=>{
-  const { username, password } = req.body || {};
-  db.get("SELECT id,username FROM users WHERE username=? AND password=?", [username,password], (err,row)=>{
-    if(err) return res.status(500).json({ error:"DB error" });
-    if(!row) return res.status(401).json({ error:"Invalid credentials" });
-    res.json({ ok:true, user:row });
-  });
-});
-
-// Feedback
-app.post("/feedback", (req,res)=>{
-  const { name,email,message } = req.body || {};
-  if(!name||!email||!message) return res.status(400).json({ error:"Missing fields" });
-  db.run("INSERT INTO feedback (name,email,message) VALUES (?,?,?)",[name,email,message],function(err){
-    if(err) return res.status(500).json({ error:"DB error" });
-    res.json({ ok:true, id:this.lastID });
-  });
-});
-
-// Chat
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-app.post("/chat", async (req,res)=>{
-  try {
-    const { message } = req.body || {};
-    if(!message) return res.status(400).json({ error:"Message required" });
+// === Teşhis endpoint'leri ===
+app.get("/diag", (req, res) => {
+  res.json({
+    ok: true,
+    node: process.version,
+    hasKey: !!process.env.OPENAI_API_KEY,
+    keyPrefix: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.slice(0, 7) : null,
+    env: process.env.RENDER ? "render" : "local"
+  });
+});
 
-    const r = await openai.chat.completions.create({
-      model:"gpt-4o-mini",
-      messages:[
-        { role:"system", content:"You are Aquarium Assistant." },
-        { role:"user", content:message }
-      ]
-    });
-    res.json({ reply: r.choices?.[0]?.message?.content || "No reply" });
-  } catch(e){
-    console.error(e);
-    res.status(500).json({ error:"OpenAI error" });
+app.get("/models", async (req, res) => {
+  try {
+    // basit bir istek: modelleri say
+    const list = await openai.models.list();
+    res.json({ count: list.data.length });
+  } catch (e) {
+    console.error("Models error:", e.status, e.message, e.response?.data);
+    res.status(e.status || 500).json({ error: e.message, details: e.response?.data });
   }
 });
 
+// === Chat (Responses API) ===
+app.post("/chat", async (req, res) => {
+  try {
+    const { message } = req.body || {};
+    if (!message) return res.status(400).json({ error: "Message required" });
+
+    // Responses API (önerilen)
+    const r = await openai.responses.create({
+      model: "gpt-4o-mini",
+      input: message
+    });
+
+    // output_text: SDK helper (4.54+)
+    const reply =
+      (r.output_text && r.output_text.trim()) ||
+      (r.output?.[0]?.content?.[0]?.text?.value) ||
+      "No reply";
+
+    return res.json({ reply });
+  } catch (e) {
+    // Render loglarında net gözüksün
+    console.error("OpenAI error:", e.status, e.message);
+    if (e.response?.data) console.error("OpenAI response:", e.response.data);
+
+    // İstemciye gerçek hatayı döndür
+    return res.status(e.status || 500).json({
+      error: e.message || "OpenAI error",
+      details: e.response?.data || null
+    });
+  }
+});
+
+// health
+app.get("/", (_req, res) => res.send("ok"));
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, ()=> console.log("listening on " + PORT));
+app.listen(PORT, () => console.log("listening on " + PORT));
+app.get("/diag", (req,res)=>res.json({
+  ok:true,
+  node:process.version,
+  hasKey: !!process.env.OPENAI_API_KEY
+}));
+
+app.get("/models", async (req,res)=> {
+  try {
+    const list = await openai.models.list();
+    res.json({ count: list.data.length });
+  } catch (e) {
+    res.status(e.status||500).json({ error: e.message, details: e.response?.data });
+  }
+});
+
+app.post("/chat", async (req,res)=> {
+  try {
+    const { message } = req.body || {};
+    if (!message) return res.status(400).json({ error: "Message required" });
+    const r = await openai.responses.create({ model:"gpt-4o-mini", input: message });
+    const reply = r.output_text?.trim() || "No reply";
+    res.json({ reply });
+  } catch (e) {
+    res.status(e.status||500).json({ error: e.message, details: e.response?.data });
+  }
+});

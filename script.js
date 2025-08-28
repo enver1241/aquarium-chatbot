@@ -1,94 +1,90 @@
-
+// === API base (Render) ===
 const API_BASE = "https://aquarium-chatbot.onrender.com";
 
-
-export async function sendMessage(msg) {
+// Basit yardımcı: güvenli fetch + geri deneme
+async function safeFetch(path, options = {}, retries = 1) {
+  const url = `${API_BASE}${path}`;
   try {
-    const r = await fetch(`${API_BASE}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: msg })
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      ...options,
     });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-    return data.reply || "No reply";
-  } catch (e) {
-    return `Error: ${e.message}`;
+    // 502/503 gibi durumlarda 1 kez tekrar dene
+    if (!res.ok) {
+      if (retries > 0 && [429, 502, 503, 504].includes(res.status)) {
+        await new Promise(r => setTimeout(r, 1000));
+        return safeFetch(path, options, retries - 1);
+      }
+      const text = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} ${text}`);
+    }
+    // JSON beklediğimiz uçlar
+    const ct = res.headers.get("content-type") || "";
+    return ct.includes("application/json") ? res.json() : res.text();
+  } catch (err) {
+    throw err;
   }
 }
 
-// ---- REGISTER ----
-export function bindRegisterForm() {
-  const form = document.getElementById("registerForm");
-  if (!form) return;
-  form.addEventListener("submit", async (e) => {
+// === CHAT ===
+async function sendChatMessage(message) {
+  const body = JSON.stringify({ message });
+  return safeFetch("/chat", { method: "POST", body });
+}
+
+// === LOGIN / REGISTER ===
+async function register(username, password) {
+  return safeFetch("/register", {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
+}
+async function login(username, password) {
+  return safeFetch("/login", {
+    method: "POST",
+    body: JSON.stringify({ username, password }),
+  });
+}
+
+// === FEEDBACK ===
+async function sendFeedback(name, email, message) {
+  return safeFetch("/feedback", {
+    method: "POST",
+    body: JSON.stringify({ name, email, message }),
+  });
+}
+
+/* ======== UI bağlama (örnek) ======== */
+const chatForm = document.getElementById("chat-form");
+const chatInput = document.getElementById("chat-input");
+const chatLog = document.getElementById("chat-log");
+
+if (chatForm && chatInput && chatLog) {
+  chatForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const username = form.username.value.trim();
-    const password = form.password.value.trim();
+    const msg = (chatInput.value || "").trim();
+    if (!msg) return;
+
+    appendLine(`You: ${msg}`);
+    chatInput.value = "";
     try {
-      const r = await fetch(`${API_BASE}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-      alert("✅ Registered!");
-      localStorage.setItem("user", username);
-      location.href = "login.html";
+      const data = await sendChatMessage(msg);
+      appendLine(`Bot: ${data.reply || "(empty)"}`);
     } catch (err) {
-      alert("❌ " + err.message);
+      console.error(err);
+      appendLine("Bot: Server unavailable!");
     }
   });
 }
 
-
-export function bindLoginForm() {
-  const form = document.getElementById("loginForm");
-  if (!form) return;
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const username = form.username.value.trim();
-    const password = form.password.value.trim();
-    try {
-      const r = await fetch(`${API_BASE}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-      alert("✅ Welcome " + data.user.username);
-      localStorage.setItem("user", data.user.username);
-      location.href = "Chatbot.html";
-    } catch (err) {
-      alert("❌ " + err.message);
-    }
-  });
+function appendLine(text) {
+  const p = document.createElement("p");
+  p.textContent = text;
+  chatLog.appendChild(p);
 }
 
-
-export function bindFeedbackForm() {
-  const form = document.getElementById("feedbackForm");
-  if (!form) return;
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const payload = {
-      name: form.name.value.trim(),
-      email: form.email.value.trim(),
-      message: form.message.value.trim()
-    };
-    try {
-      const r = await fetch(`${API_BASE}/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-      location.href = "thanks.html";
-    } catch (err) {
-      alert("❌ " + err.message);
-    }
-  });
-}
+/* Hızlı sağlık kontrolü – sayfa yüklenince konsola yazar */
+safeFetch("/diag")
+  .then(d => console.log("diag:", d))
+  .catch(e => console.warn("diag failed:", e.message));

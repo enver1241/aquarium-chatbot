@@ -1,15 +1,6 @@
 node_modules/
 .env
 feedback.db
-<<<<<<< HEAD
-=======
-echo "node_modules/" >> .gitignore
-git rm -r --cached node_modules
-git add .gitignore
-git commit -m "chore: ignore node_modules"
->>>>>>> c171be5 (fix: auth/login/feedback; switch to sqlite3; working chat API; frontend fetch)
-db.sqlite
-feedback.db
-.env
-node_modules
-
+*.sqlite
+npm-debug.log
+.DS_Store

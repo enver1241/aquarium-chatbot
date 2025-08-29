@@ -1,9 +1,9 @@
-// server.js — Stable production server for Aquarium Chatbot (CommonJS, Node >=18)
+
 
 require("dotenv").config();
 
 const dns = require("dns");
-dns.setDefaultResultOrder("ipv4first"); // IPv4'ü öne al
+dns.setDefaultResultOrder("ipv4first"); 
 
 const express = require("express");
 const cors = require("cors");
@@ -13,7 +13,7 @@ const sqlite3 = require("sqlite3").verbose();
 const { OpenAI } = require("openai");
 const { Agent, setGlobalDispatcher, fetch } = require("undici");
 
-// ---- Undici: IPv4 + makul timeout/pipelining
+
 setGlobalDispatcher(new Agent({
   connect: { timeout: 30_000, family: 4 },
   headersTimeout: 60_000,
@@ -25,19 +25,19 @@ setGlobalDispatcher(new Agent({
 const app = express();
 app.set("trust proxy", 1);
 
-// CORS
+
 app.use(cors({
   origin: ["https://aquarium-chatbot.onrender.com", "https://aqualifeai.com"],
   methods: ["GET", "POST"],
 }));
 app.use(express.json({ limit: "1mb" }));
 
-// Ek güvenlik başlıkları
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
 
-// Rate-limit
+
 app.use(rateLimit({
   windowMs: 60_000,
   max: 60,
@@ -45,13 +45,22 @@ app.use(rateLimit({
   legacyHeaders: false,
 }));
 
-// Minimal istek logu
+
 app.use((req, _res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// ==== SQLite
+
+const path = require("path");
+app.use(express.static(__dirname));
+
+
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+
 const db = new sqlite3.Database("./db.sqlite");
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
@@ -179,7 +188,7 @@ app.post("/login", a((req, res) => {
   });
 }));
 
-// ==== Feedback
+
 app.post("/feedback", a((req, res) => {
   const { name, email, message } = req.body || {};
   if (!name || !email || !message) return res.status(400).json({ error: "Missing fields" });
@@ -190,20 +199,20 @@ app.post("/feedback", a((req, res) => {
   });
 }));
 
-// 404
+
 app.use((_req, res) => res.status(404).json({ error: "Not found" }));
 
-// Hata yakalama
+
 app.use((err, _req, res, _next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ error: "Internal error" });
 });
 
-// Start
+
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => console.log(`listening on ${PORT}`));
 
-// Graceful shutdown
+
 const shutdown = (sig) => () => {
   console.log(`${sig} received, shutting down...`);
   server.close(() => {

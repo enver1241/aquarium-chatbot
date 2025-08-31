@@ -4,3 +4,4 @@ feedback.db
 *.sqlite
 npm-debug.log
 .DS_Store
+.env

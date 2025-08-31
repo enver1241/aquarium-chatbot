@@ -98,6 +98,14 @@ app.get("/diag", a(async (_req, res) => {
     db_file: DB_FILE
   });
 }));
+// server.js içine (diag'ın altına bir yerlere)
+app.get("/version", (_req, res) => {
+  res.json({
+    time: new Date().toISOString(),
+    node: process.version,
+    commit: process.env.RENDER_GIT_COMMIT || null
+  });
+});
 
 // ---- Ağ debug (egress testi)
 app.get("/net-test", a(async (_req, res) => {
@@ -118,6 +126,13 @@ app.get("/net-test", a(async (_req, res) => {
   }
   res.json(out);
 }));
+app.get("/__version", (_req, res) => {
+  res.json({
+    ts: new Date().toISOString(),
+    node: process.version,
+    commit: process.env.RENDER_GIT_COMMIT || null
+  });
+});
 
 // ---- Probe (ham fetch + SDK) — ayrıntılı hata gösterir
 app.get("/probe-openai", a(async (_req, res) => {

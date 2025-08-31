@@ -14,6 +14,17 @@ const path = require("path");
 const { OpenAI } = require("openai");
 const { Agent, setGlobalDispatcher, fetch } = require("undici");
 const Database = require("better-sqlite3");
+const os = require("os");
+app.get("/dns-test", (req, res) => {
+  dns.lookup("api.openai.com", (err, address, family) => {
+    res.json({
+      host: "api.openai.com",
+      error: err ? String(err) : null,
+      address, family,
+      hostname: os.hostname()
+    });
+  });
+});
 
 // ---- HTTP agent (Render zaman aşımları için makul değerler)
 setGlobalDispatcher(new Agent({

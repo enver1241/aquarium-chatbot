@@ -1,7 +1,9 @@
+// server.js — Aquarium Chatbot (stable + debug)
+// ------------------------------------------------
 require("dotenv").config();
 
 const dns = require("dns");
-dns.setDefaultResultOrder("ipv4first");
+dns.setDefaultResultOrder?.("ipv4first"); // Node v18+ için
 
 const express = require("express");
 const cors = require("cors");
@@ -13,20 +15,19 @@ const { OpenAI } = require("openai");
 const { Agent, setGlobalDispatcher, fetch } = require("undici");
 const Database = require("better-sqlite3");
 
-// --- HTTP agent: reasonable timeouts (Render/GitHub Pages fetches)
+// ---- HTTP agent (Render zaman aşımları için makul değerler)
 setGlobalDispatcher(new Agent({
   connect: { timeout: 30_000 },
   headersTimeout: 30_000,
   bodyTimeout: 60_000
 }));
 
-// --- DB init (auto-creates file if missing)
+// ---- DB init
 const DB_FILE = process.env.DB_FILE || path.join(__dirname, "db.sqlite");
 const db = new Database(DB_FILE);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
-// Create tables if not exist
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,31 +55,28 @@ db.exec(`
 
 const app = express();
 
-// --- Security & CORS
+// ---- Security & CORS
 app.use(helmet());
 app.use(cors({
   origin: "*",
-  methods: ["GET","POST","OPTIONS"],
+  methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "x-admin-key"]
 }));
 app.use(express.json({ limit: "1mb" }));
 
-const limiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 90,
-});
+const limiter = rateLimit({ windowMs: 60_000, max: 90 });
 app.use(limiter);
 
-// --- Static files (serve HTML pages if running locally/Render)
+// ---- Static (lokalde HTML’leri buradan servis etmek için)
 app.use(express.static(__dirname));
 
-// --- OpenAI client
+// ---- OpenAI client (SDK) — fallback olarak raw fetch da var
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// async wrapper
+// küçük yardımcı
 const a = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-// --- Health
+// ---- Health
 app.get("/", (_req, res) => res.type("text/plain").send("ok"));
 app.get("/diag", a(async (_req, res) => {
   res.json({
@@ -90,7 +88,64 @@ app.get("/diag", a(async (_req, res) => {
   });
 }));
 
-// --- Probe OpenAI
+// ---- Ağ debug (egress testi)
+app.get("/net-test", a(async (_req, res) => {
+  const out = {};
+  try {
+    const r = await fetch("https://1.1.1.1");
+    out.cloudflare = r.status;
+  } catch (e) {
+    out.cloudflare = String(e?.message || e);
+  }
+  try {
+    const r2 = await fetch("https://api.openai.com/v1/models", {
+      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }
+    });
+    out.openai = r2.status;
+  } catch (e) {
+    out.openai = String(e?.message || e);
+  }
+  res.json(out);
+}));
+
+// ---- Probe (ham fetch + SDK) — ayrıntılı hata gösterir
+app.get("/probe-openai", a(async (_req, res) => {
+  try {
+    // 1) Ham fetch
+    const r1 = await fetch("https://api.openai.com/v1/models", {
+      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }
+    });
+    const text1 = await r1.text();
+
+    // 2) SDK testi
+    let sdk = null, sdkErr = null;
+    try {
+      const resp = await openai.chat.completions.create({
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        messages: [{ role: "user", content: "Say ok" }],
+        max_tokens: 4,
+      });
+      sdk = { model: resp.model, sample: resp.choices?.[0]?.message?.content || null };
+    } catch (e) {
+      sdkErr = { msg: String(e?.message || e), code: e?.code, cause: e?.cause?.code };
+    }
+
+    res.json({
+      ok: true,
+      rawFetch: { status: r1.status, body: text1.slice(0, 200) },
+      sdk, sdkErr
+    });
+  } catch (e) {
+    res.status(500).json({
+      error: "probe failed",
+      detail: String(e?.message || e),
+      code: e?.code || e?.name,
+      cause: e?.cause?.code || e?.cause?.errno
+    });
+  }
+}));
+
+// ---- Models (SDK üstünden) — bağlantı hatasını net verir
 app.get("/models", a(async (_req, res) => {
   try {
     const list = await openai.models.list();
@@ -100,47 +155,30 @@ app.get("/models", a(async (_req, res) => {
   }
 }));
 
-// simple test endpoint
-app.get("/probe-openai", a(async (_req, res) => {
-  try {
-    const resp = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      messages: [{ role: "user", content: "Say ok" }],
-      max_tokens: 4,
-    });
-    res.json({ ok: true, model: resp.model, sample: resp.choices?.[0]?.message?.content || null });
-  } catch (e) {
-    res.status(500).json({ error: "OpenAI probe failed", detail: String(e.message || e) });
-  }
-}));
-
-// --- Auth helpers
+// ---- Auth helpers
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
-function toHash(pw) {
-  return bcrypt.hashSync(pw, 10);
-}
-function verify(pw, hash) {
-  return bcrypt.compareSync(pw, hash);
-}
+const toHash = (pw) => bcrypt.hashSync(pw, 10);
+const verify = (pw, hash) => bcrypt.compareSync(pw, hash);
 
-// Seed default admin user if not exists (username: admin)
+// Seed admin
 try {
   const row = db.prepare("SELECT id FROM users WHERE username=?").get("admin");
   if (!row) {
-    db.prepare("INSERT INTO users (username, password_hash) VALUES (?,?)").run("admin", toHash(ADMIN_PASSWORD));
+    db.prepare("INSERT INTO users (username, password_hash) VALUES (?,?)")
+      .run("admin", toHash(ADMIN_PASSWORD));
     console.log("Seeded default admin user with ADMIN_PASSWORD.");
   }
 } catch (e) {
   console.warn("Admin seed failed:", e.message);
 }
 
-// --- Register
+// ---- Register
 app.post("/register", a(async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: "Missing fields" });
   try {
-    const stmt = db.prepare("INSERT INTO users (username, password_hash) VALUES (?,?)");
-    const info = stmt.run(username, toHash(password));
+    const info = db.prepare("INSERT INTO users (username, password_hash) VALUES (?,?)")
+      .run(username, toHash(password));
     res.json({ ok: true, id: info.lastInsertRowid });
   } catch (e) {
     if (String(e).includes("UNIQUE")) return res.status(409).json({ error: "User exists" });
@@ -148,7 +186,7 @@ app.post("/register", a(async (req, res) => {
   }
 }));
 
-// --- Login
+// ---- Login
 app.post("/login", a(async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: "Missing fields" });
@@ -158,15 +196,16 @@ app.post("/login", a(async (req, res) => {
   res.json({ ok: true, id: row.id, username: row.username });
 }));
 
-// --- Feedback
+// ---- Feedback
 app.post("/feedback", a(async (req, res) => {
   const { name, email, message } = req.body || {};
   if (!message) return res.status(400).json({ error: "Message required" });
-  const info = db.prepare("INSERT INTO feedback (name,email,message) VALUES (?,?,?)").run(name||null, email||null, message);
+  const info = db.prepare("INSERT INTO feedback (name,email,message) VALUES (?,?,?)")
+    .run(name || null, email || null, message);
   res.json({ ok: true, id: info.lastInsertRowid });
 }));
 
-// Admin login (simple)
+// ---- Admin
 app.post("/admin/login", a(async (req, res) => {
   const { password } = req.body || {};
   if (!password) return res.status(400).json({ error: "Missing password" });
@@ -174,7 +213,6 @@ app.post("/admin/login", a(async (req, res) => {
   res.json({ ok: true, token: "admin" });
 }));
 
-// Admin protected route
 app.get("/admin/feedbacks", a(async (req, res) => {
   const key = req.headers["x-admin-key"] || req.query.token;
   if (key !== "admin") return res.status(401).json({ error: "Unauthorized" });
@@ -182,30 +220,45 @@ app.get("/admin/feedbacks", a(async (req, res) => {
   res.json({ ok: true, rows });
 }));
 
-// --- Chat
+// ---- CHAT (RAW FETCH FALLBACK — SDK yerine doğrudan HTTP)
 app.post("/chat", a(async (req, res) => {
   const { message, username } = req.body || {};
   if (!message) return res.status(400).json({ error: "Missing message" });
   if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: "Missing OPENAI_API_KEY" });
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are AquariumLife Assistant, expert in aquarium animals, care, water parameters, compatibility, and troubleshooting. Answer briefly and clearly." },
-        { role: "user", content: String(message) }
-      ],
-      temperature: 0.2
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are AquariumLife Assistant, expert in aquarium animals, care, water parameters, compatibility, and troubleshooting. Answer briefly and clearly." },
+          { role: "user", content: String(message) }
+        ],
+        temperature: 0.2
+      })
     });
-    const answer = completion.choices?.[0]?.message?.content?.trim() || "Sorry, I couldn't answer.";
-    db.prepare("INSERT INTO chat_logs (username,question,answer) VALUES (?,?,?)").run(username||null, message, answer);
+
+    if (!r.ok) {
+      const txt = await r.text().catch(() => "");
+      throw new Error(`OpenAI HTTP ${r.status} ${txt}`);
+    }
+
+    const j = await r.json();
+    const answer = j.choices?.[0]?.message?.content?.trim() || "Sorry, I couldn't answer.";
+    db.prepare("INSERT INTO chat_logs (username,question,answer) VALUES (?,?,?)")
+      .run(username || null, message, answer);
     res.json({ ok: true, answer });
   } catch (e) {
-    res.status(500).json({ error: "OpenAI error", detail: String(e.message || e) });
+    res.status(500).json({ error: "OpenAI error", detail: String(e?.message || e) });
   }
 }));
 
-// --- Error handler
+// ---- Error handler
 app.use((err, _req, res, _next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ error: "Server error", detail: String(err.message || err) });

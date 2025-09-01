@@ -1,4 +1,7 @@
 // -------- API BASE (aynı origin) --------
+// Canlıda (aqualifeai.com) CORS sorunlarını önlemek için boş bırak.
+// Yerelde farklı bir API vuracaksan, HTML'de script.js'den önce
+// <script>window.API_BASE="http://localhost:3000"</script> yazabilirsin.
 const API_BASE = (typeof window !== "undefined" && window.API_BASE) ? window.API_BASE : "";
 
 // --- küçük yardımcı: güvenli fetch + retry ---
@@ -27,10 +30,10 @@ async function safeFetch(path, opts = {}, retries = 1) {
 
 // --------- API çağrıları ----------
 const api = {
-  chat:  (message, username)       => safeFetch("/chat",     { method: "POST", body: JSON.stringify({ message, username }) }),
-  register: (username, password)   => safeFetch("/register", { method: "POST", body: JSON.stringify({ username, password }) }),
-  login:    (username, password)   => safeFetch("/login",    { method: "POST", body: JSON.stringify({ username, password }) }),
-  feedback: (name, email, message) => safeFetch("/feedback", { method: "POST", body: JSON.stringify({ name, email, message }) }),
+  chat:     (message, username)       => safeFetch("/chat",     { method: "POST", body: JSON.stringify({ message, username }) }),
+  register: (username, password)      => safeFetch("/register", { method: "POST", body: JSON.stringify({ username, password }) }),
+  login:    (username, password)      => safeFetch("/login",    { method: "POST", body: JSON.stringify({ username, password }) }),
+  feedback: (name, email, message)    => safeFetch("/feedback", { method: "POST", body: JSON.stringify({ name, email, message }) }),
 };
 
 // ======== Chat UI (varsa) ========
@@ -104,12 +107,10 @@ bindJSONForm("#loginForm", "/login", (_res, data) => {
   window.location.href = "Chatbot.html";
 });
 
-// Admin login → sabit admin için Chatbot ya da admin.html (sen nasıl istersen)
+// Admin login → sabit admin için admin.html'e git
 bindJSONForm("#adminLoginForm", "/login", (_res, _data) => {
-  // admin-login.html'de username hidden=admin zaten
   localStorage.setItem("user", "admin");
-  // güvenlik: şifreyi saklamasan da olur; gerekiyorsa:
-  // localStorage.setItem("pass", _data.password);
+  // Güvenlik: admin şifresini saklamasan da olur.
   window.location.href = "admin.html";
 });
 
@@ -119,4 +120,9 @@ bindJSONForm("#feedbackForm", "/feedback", () => {
 });
 
 // Hızlı sağlık kontrolü (konsola log)
-safeFetch("/diag").then(d => console.log("diag:", d)).catch(e => console.warn("diag failed:", e?.message || e));
+safeFetch("/diag")
+  .then(d => console.log("diag:", d))
+  .catch(e => console.warn("diag failed:", e?.message || e));
+
+// ---- Fallback dedektörü için globale export et ----
+window.bindJSONForm = bindJSONForm;

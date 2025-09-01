@@ -22,14 +22,24 @@
     }
     .sidebar h2 { margin-top: 0; }
     .sidebar button {
-      width: 100%; padding: 10px; margin-bottom: 20px;
-      background-color: #3498db; color: white; border: none; cursor: pointer; font-size: 16px;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
     }
     .sidebar button:hover { background-color: #2980b9; }
     .sidebar ul { list-style-type: none; padding: 0; }
     .sidebar li {
-      margin-bottom: 10px; cursor: pointer; background-color: #34495e;
-      padding: 10px; border-radius: 5px; transition: background-color 0.3s;
+      margin-bottom: 10px;
+      cursor: pointer;
+      background-color: #34495e;
+      padding: 10px;
+      border-radius: 5px;
+      transition: background-color 0.3s;
     }
     .sidebar li:hover { background-color: #3d5a73; }
     .answer { display: none; margin-top: 5px; font-size: 14px; color: #bdc3c7; }
@@ -37,6 +47,7 @@
     .main { flex: 1; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
     #chat-log { flex: 1; overflow-y: auto; padding-right: 10px; }
     #chat-log p { margin: 5px 0; }
+
     .input-area { display: flex; margin-top: 10px; gap: 10px; }
     #chat-input {
       flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;
@@ -46,6 +57,7 @@
       border: none; border-radius: 4px; cursor: pointer;
     }
     .input-area button:hover { background-color: #1e8449; }
+
     .logout-btn { margin-top: 20px; background-color: #e74c3c; }
     .logout-btn:hover { background-color: #c0392b; }
   </style>
@@ -68,7 +80,7 @@
     </form>
   </div>
 
-  <!-- Kimlik kontrolü (basit tarayıcı tarafı) -->
+  <!-- Basit giriş kontrolü -->
   <script>
     window.addEventListener('load', () => {
       const user = localStorage.getItem("user");
@@ -97,19 +109,20 @@
   <!-- Ortak script: aynı origin'i kullanır, /chat endpoint'ine gönderir -->
   <script src="/script.js" defer></script>
 
-  <!-- Fallback: script.js yüklenmezse yine çalışsın -->
+  <!-- Fallback: script.js yüklenmezse still works -->
   <script>
     (function fallbackIfNoScriptJS() {
-      if (window.bindJSONForm) return; // script.js yüklendiyse gerek yok
+      // script.js yüklendiyse (bindJSONForm global'i varsa) fallback'e gerek yok
+      if (window.bindJSONForm) return;
 
       const chatForm = document.getElementById('chat-form');
       const chatInput = document.getElementById('chat-input');
       const chatLog = document.getElementById('chat-log');
       const questionList = document.getElementById('questions');
 
-      function append(text) {
+      function append(html) {
         const p = document.createElement('p');
-        p.innerHTML = text;
+        p.innerHTML = html;
         chatLog.appendChild(p);
         chatLog.scrollTop = chatLog.scrollHeight;
       }
@@ -122,10 +135,11 @@
         append(`<strong>You:</strong> ${message}`);
 
         try {
+          const username = localStorage.getItem('user') || null;   // kullanıcı adını da gönder
           const res = await fetch('/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
+            body: JSON.stringify({ message, username })
           });
           const data = await res.json().catch(() => ({}));
           const botReply = data.answer || data.reply || "Sorry, I couldn't get a reply.";

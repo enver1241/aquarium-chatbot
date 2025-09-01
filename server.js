@@ -3,25 +3,31 @@ require("dotenv").config();
 const dns = require("dns");
 dns.setDefaultResultOrder?.("ipv4first"); // IPv6 önceliği sorunlarını önle
 
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-const path = require("path");
-const os = require("os");
 const Database = require("better-sqlite3");
 const bcrypt = require("bcryptjs");
 
-// ---- APP ÖNCE OLUŞTURULUR ----
+// ---- APP
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = (process.env.PORT && Number(process.env.PORT)) || 3000;
 const DB_FILE = process.env.DB_FILE || path.join(__dirname, "db.sqlite");
 
 // ---- MIDDLEWARE
 app.use(helmet());
 app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: "1mb" }));
+// <form method="POST"> (application/x-www-form-urlencoded) gövdelerini de al:
+app.use(express.urlencoded({ extended: true }));
 app.use(rateLimit({ windowMs: 60_000, max: 100 }));
+
+// Statik dosyaları projenin kökünden servis et (html/css/js/img)
 app.use(express.static(__dirname));
 
 // ---- DB
@@ -65,8 +71,15 @@ try {
 // ---- HELPERS
 const a = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-// ---- HEALTH & DEBUG
-app.get("/", (_req, res) => res.type("text/plain").send("ok"));
+// ---- ROOT / HEALTH
+// Ana sayfa: index.html varsa onu; yoksa Chatbot.html'i göster
+app.get("/", (_req, res) => {
+  const indexPath = path.join(__dirname, "index.html");
+  const fallbackPath = path.join(__dirname, "Chatbot.html");
+  const file = fs.existsSync(indexPath) ? indexPath : fallbackPath;
+  res.sendFile(file);
+});
+
 app.get("/diag", (_req, res) => {
   res.json({
     ok: true,
@@ -126,6 +139,7 @@ app.post("/register", a(async (req, res) => {
     res.status(500).json({ error: "DB error", detail: String(e?.message || e) });
   }
 }));
+
 app.post("/login", a(async (req, res) => {
   const { username, password } = req.body || {};
   const row = db.prepare("SELECT id,username,password_hash FROM users WHERE username=?").get(username || "");
@@ -134,6 +148,7 @@ app.post("/login", a(async (req, res) => {
   }
   res.json({ ok: true, id: row.id, username: row.username });
 }));
+
 app.post("/feedback", a(async (req, res) => {
   const { name, email, message } = req.body || {};
   if (!message) return res.status(400).json({ error: "Message required" });
@@ -179,5 +194,5 @@ app.post("/chat", a(async (req, res) => {
 // ---- 404
 app.use((_req, res) => res.status(404).send("Not Found"));
 
-// ---- START
-app.listen(PORT, () => console.log("listening on", PORT));
+// ---- START (0.0.0.0 bağla; Render/Containers için güvenli)
+app.listen(PORT, "0.0.0.0", () => console.log("listening on", PORT));

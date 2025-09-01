@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aquarium ChatBot - Home</title>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #a1ffce, #faffd1); color: #333; }
+    nav { background:#fff; box-shadow:0 2px 4px rgba(0,0,0,.1); padding:15px 40px;
+      display:flex; justify-content:space-between; align-items:center; }
+    nav .logo { font-weight:bold; font-size:1.5em; }
+    nav ul { list-style:none; display:flex; gap:30px; margin:0; padding:0; }
+    nav ul li { display:flex; align-items:center; }
+    nav ul li a, nav ul li button { text-decoration:none; color:#333; font-weight:bold;
+      background:none; border:none; cursor:pointer; font-size:1em; padding:0; }
+    nav ul li a:hover, nav ul li button:hover { color:#0077b6; }
+    header { text-align:center; padding:80px 20px; }
+    header h1 { font-size:3em; margin-bottom:10px; }
+    header p { font-size:1.2em; color:#555; }
+    .btn { padding:12px 24px; background:#0077b6; color:#fff; border:none; border-radius:25px;
+      font-size:1em; cursor:pointer; margin-top:30px; }
+    .btn:hover { background:#005f86; }
+    section { padding:60px 40px; background:#f4f4f4; }
+    section h2 { text-align:center; font-size:2em; margin-bottom:20px; }
+    section p { max-width:800px; margin:0 auto; text-align:center; line-height:1.6; }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">🐠 Aquarium Animals & ChatBot</div>
+    <ul>
+      <li><a href="admin-login.html">Admin</a></li>
+      <li><a href="index.html" aria-current="page">Home</a></li>
+      <li><button onclick="goToChatbot()">Chatbot</button></li>
+      <li><a href="feedback.html">Feedback</a></li> <!-- düzeltildi -->
+      <li><a href="login.html">Login</a></li>
+      <li><a href="register.html">Register</a></li>
+    </ul>
+  </nav>
+
+  <header>
+    <h1>Welcome to the Aquarium ChatBot Website</h1>
+    <p>Discover aquatic life, get care tips, and interact with our intelligent bot!</p>
+    <button class="btn" onclick="goToChatbot()">Go to ChatBot</button>
+  </header>
+
+  <section id="about">
+    <h2>About us</h2>
+    <p>
+      This website is designed for users who want to learn about aquarium creatures.
+      Users can ask questions through the AI-powered chatbot and get answers instantly.
+      Our project aims to make aquarium maintenance more accessible and fun.
+    </p>
+  </section>
+
+  <script>
+    function goToChatbot() {
+      const user = localStorage.getItem("user");
+      const pass = localStorage.getItem("pass");
+      if (!user || !pass) {
+        alert("❗Please log in to access the ChatBot.");
+        window.location.href = "login.html";
+      } else {
+        window.location.href = "Chatbot.html";
+      }
+    }
+  </script>
+</body>
+</html>

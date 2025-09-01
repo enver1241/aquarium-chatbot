@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      min-height: 100vh; display: flex; justify-content: center; align-items: center;
+      animation: fadeIn 1s ease-out;
+    }
+    .login-container {
+      background: #fff; padding: 40px 30px; border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.1);
+      width: 100%; max-width: 400px; text-align: center;
+      animation: slideUp 1.2s ease-out;
+    }
+    .login-container h2 { margin-bottom: 25px; font-size: 28px; color: #333; }
+    form { display: flex; flex-direction: column; gap: 15px; }
+    label { text-align: left; font-weight: 600; font-size: 14px; color: #555; }
+    input[type="text"], input[type="password"] {
+      padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; transition: border .3s;
+    }
+    input:focus { border-color: #007bff; outline: none; }
+    button[type="submit"] {
+      background: #0077ff; color: white; padding: 12px; border: none; border-radius: 8px;
+      font-size: 16px; cursor: pointer; transition: background .3s, transform .2s;
+    }
+    button[type="submit"]:hover { background: #005fcc; transform: scale(1.05); }
+    a { display: inline-block; margin-top: 20px; color: #0077ff; text-decoration: none; font-size: 14px; }
+    a:hover { text-decoration: underline; }
+    @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+    @keyframes slideUp { from {transform:translateY(50px);opacity:0;} to {transform:translateY(0);opacity:1;} }
+    @media (max-width: 500px) { .login-container { padding: 30px 20px; } }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Welcome Back</h2>
+    <!-- Artık backend'e direkt gider -->
+    <form id="loginForm" method="POST" action="/login">
+      <label for="login-username">Username</label>
+      <input type="text" id="login-username" name="username" required />
+
+      <label for="login-password">Password</label>
+      <input type="password" id="login-password" name="password" required />
+
+      <button type="submit">Login</button>
+    </form>
+
+    <a href="register.html">← Don't have an account? Register here</a>
+  </div>
+
+  <script src="/script.js" defer></script>
+</body>
+</html>

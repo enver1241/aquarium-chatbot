@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Register</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #89f7fe, #66a6ff);
+      min-height: 100vh; display: flex; justify-content: center; align-items: center;
+    }
+    .register-container {
+      background: #ffffff; padding: 40px 30px; border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.1); width: 100%; max-width: 400px; text-align: center;
+    }
+    .register-container h2 { margin-bottom: 25px; font-size: 28px; color: #333; }
+    form { display: flex; flex-direction: column; }
+    label { text-align: left; margin-bottom: 8px; font-weight: 600; color: #555; }
+    input[type="text"], input[type="password"] {
+      padding: 12px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px;
+    }
+    button[type="submit"] {
+      background: #0077ff; color: #fff; padding: 12px; border: none; border-radius: 8px;
+      font-size: 16px; cursor: pointer; transition: background .3s;
+    }
+    button[type="submit"]:hover { background: #005fcc; }
+    a { display: inline-block; margin-top: 20px; color: #0077ff; text-decoration: none; font-size: 14px; }
+    a:hover { text-decoration: underline; }
+    @media (max-width: 500px) { .register-container { padding: 30px 20px; } }
+  </style>
+</head>
+<body>
+  <div class="register-container">
+    <h2>Create Account</h2>
+
+    <!-- KLASİK GÖNDERİM (backend: POST /register, fields: username/password) -->
+    <form id="registerForm" method="POST" action="/register">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" autocomplete="username" required />
+
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="new-password" required />
+
+      <button type="submit">Register</button>
+    </form>
+
+    <a href="login.html">Already have an account? Login</a>
+
+    <!-- JS varsa AJAX ile gönderir; yoksa form normal çalışır -->
+    <script src="/script.js" defer></script>
+    <noscript><small>JavaScript devre dışı: Form gönderimi yine çalışır.</small></noscript>
+  </div>
+</body>
+</html>

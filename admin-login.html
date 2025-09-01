@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e3f2fd;
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; margin: 0;
+    }
+    .login-box {
+      background: #fff; padding: 30px; border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 100%; max-width: 400px; text-align: center;
+    }
+    h2 { margin-bottom: 20px; color: #0077b6; }
+    label { display:block; text-align:left; margin-bottom:8px; font-weight:600; color:#333; }
+    input {
+      width: 100%; padding: 12px; margin-bottom: 15px;
+      border: 1px solid #ccc; border-radius: 5px; font-size: 16px;
+    }
+    button {
+      background-color: #0077b6; color: #fff; padding: 12px 20px;
+      border: none; border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%;
+    }
+    button:hover { background-color: #005f86; }
+    .error { color: red; margin-top: 10px; min-height: 1.2em; }
+    .muted { margin-top: 10px; color:#666; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>🔐 Admin Login</h2>
+
+    <!-- Backend'e doğrudan gider: POST /login -->
+    <form id="adminLoginForm" method="POST" action="/login" novalidate>
+      <!-- username'i sabitle -->
+      <input type="hidden" name="username" value="admin" />
+      <label for="adminPass">Admin Password</label>
+      <input type="password" id="adminPass" name="password" placeholder="Enter Admin Password" required />
+      <button type="submit">Login</button>
+      <p class="error" id="errorMsg"></p>
+      <p class="muted">İpucu: Parola, sunucudaki <code>ADMIN_PASSWORD</code> (yoksa varsayılan <code>admin123</code>).</p>
+    </form>
+  </div>
+
+  <!-- İstersen AJAX'lı gönderim için basit geliştirme -->
+  <script>
+  (function () {
+    const form = document.getElementById('adminLoginForm');
+    const msg  = document.getElementById('errorMsg');
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+      // Klasik form gönderimi de çalışır; AJAX istersen bu bloğu kullan:
+      e.preventDefault();
+      msg.textContent = '';
+
+      const payload = new URLSearchParams(new FormData(form));
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: payload.toString()
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          msg.textContent = data && data.error ? data.error : ('Error ' + res.status);
+          return;
+        }
+        // Başarılı giriş sonrası admin paneline yönlendir:
+        window.location.href = 'admin.html';
+      } catch (err) {
+        msg.textContent = err?.message || String(err);
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

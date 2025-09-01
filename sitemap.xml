@@ -7,3 +7,5 @@
     <priority>1.0</priority>
   </url>
 </urlset>
+<script src="/script.js?v=1" defer></script>
+<script src="/debug.js?v=1" defer></script> <!-- geçici -->

@@ -1,10 +1,10 @@
 // -------- API BASE (aynı origin) --------
 // Canlıda (aqualifeai.com) CORS sorunlarını önlemek için boş bırak.
-// Yerelde farklı bir API vuracaksan, HTML'de script.js'den önce
-// <script>window.API_BASE="http://localhost:3000"</script> yazabilirsin.
+// Yerelde başka API vuracaksan, HTML'de script.js'den önce:
+// <script>window.API_BASE="http://localhost:3000"</script>
 const API_BASE = (typeof window !== "undefined" && window.API_BASE) ? window.API_BASE : "";
 
-// --- küçük yardımcı: güvenli fetch + retry ---
+// --- güvenli fetch + retry ---
 async function safeFetch(path, opts = {}, retries = 1) {
   const url = /^https?:\/\//i.test(path) ? path : `${API_BASE}${path}`;
   const { method = "GET", headers = {}, body } = opts;
@@ -75,8 +75,7 @@ function bindJSONForm(formSelector, endpointDefault, onSuccess) {
   if (!form) return;
 
   form.addEventListener("submit", async (e) => {
-    // klasik submit yerine JSON gönder
-    e.preventDefault();
+    e.preventDefault(); // klasik submit yerine JSON gönder
     const action = form.getAttribute("action") || endpointDefault || "/";
     const method = form.getAttribute("method") || "POST";
     const fd = new FormData(form);
@@ -107,10 +106,9 @@ bindJSONForm("#loginForm", "/login", (_res, data) => {
   window.location.href = "Chatbot.html";
 });
 
-// Admin login → sabit admin için admin.html'e git
+// Admin login → admin.html'e git (username sabit admin)
 bindJSONForm("#adminLoginForm", "/login", (_res, _data) => {
   localStorage.setItem("user", "admin");
-  // Güvenlik: admin şifresini saklamasan da olur.
   window.location.href = "admin.html";
 });
 

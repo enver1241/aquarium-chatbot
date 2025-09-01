@@ -5,61 +5,24 @@
   <title>Chatbot Interface</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      height: 100vh;
-      margin: 0;
-      background-color: #f5f5f5;
-    }
-    .sidebar {
-      width: 300px;
-      background-color: #2c3e50;
-      color: white;
-      padding: 20px;
-      box-sizing: border-box;
-      overflow-y: auto;
-    }
+    body { font-family: Arial, sans-serif; display: flex; height: 100vh; margin: 0; background: #f5f5f5; }
+    .sidebar { width: 300px; background: #2c3e50; color: #fff; padding: 20px; box-sizing: border-box; overflow-y: auto; }
     .sidebar h2 { margin-top: 0; }
-    .sidebar button {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 20px;
-      background-color: #3498db;
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .sidebar button:hover { background-color: #2980b9; }
-    .sidebar ul { list-style-type: none; padding: 0; }
-    .sidebar li {
-      margin-bottom: 10px;
-      cursor: pointer;
-      background-color: #34495e;
-      padding: 10px;
-      border-radius: 5px;
-      transition: background-color 0.3s;
-    }
-    .sidebar li:hover { background-color: #3d5a73; }
+    .sidebar button { width: 100%; padding: 10px; margin-bottom: 20px; background: #3498db; color: #fff; border: none; cursor: pointer; font-size: 16px; }
+    .sidebar button:hover { background: #2980b9; }
+    .sidebar ul { list-style: none; padding: 0; }
+    .sidebar li { margin-bottom: 10px; cursor: pointer; background: #34495e; padding: 10px; border-radius: 5px; transition: background .3s; }
+    .sidebar li:hover { background: #3d5a73; }
     .answer { display: none; margin-top: 5px; font-size: 14px; color: #bdc3c7; }
-
     .main { flex: 1; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
     #chat-log { flex: 1; overflow-y: auto; padding-right: 10px; }
     #chat-log p { margin: 5px 0; }
-
     .input-area { display: flex; margin-top: 10px; gap: 10px; }
-    #chat-input {
-      flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px;
-    }
-    .input-area button {
-      padding: 10px 20px; font-size: 16px; background-color: #27ae60; color: white;
-      border: none; border-radius: 4px; cursor: pointer;
-    }
-    .input-area button:hover { background-color: #1e8449; }
-
-    .logout-btn { margin-top: 20px; background-color: #e74c3c; }
-    .logout-btn:hover { background-color: #c0392b; }
+    #chat-input { flex: 1; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+    .input-area button { padding: 10px 20px; font-size: 16px; background: #27ae60; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .input-area button:hover { background: #1e8449; }
+    .logout-btn { margin-top: 20px; background: #e74c3c; }
+    .logout-btn:hover { background: #c0392b; }
   </style>
 </head>
 <body>
@@ -73,7 +36,7 @@
   <div class="main">
     <div id="chat-log"></div>
 
-    <!-- script.js ile uyumlu form/id'ler -->
+    <!-- script.js ile uyumlu -->
     <form id="chat-form" class="input-area" autocomplete="off">
       <input type="text" id="chat-input" placeholder="Type a message..." />
       <button type="submit">Send</button>
@@ -106,23 +69,20 @@
     }
   </script>
 
-  <!-- Ortak script: aynı origin'i kullanır, /chat endpoint'ine gönderir -->
-  <script src="/script.js" defer></script>
+  <script src="/script.js?v=1" defer></script>
 
-  <!-- Fallback: script.js yüklenmezse still works -->
+  <!-- Fallback: script.js yüklenmezse yine çalışsın -->
   <script>
     (function fallbackIfNoScriptJS() {
-      // script.js yüklendiyse (bindJSONForm global'i varsa) fallback'e gerek yok
-      if (window.bindJSONForm) return;
-
+      if (window.bindJSONForm) return; // script.js yüklendiyse gerek yok
       const chatForm = document.getElementById('chat-form');
       const chatInput = document.getElementById('chat-input');
       const chatLog = document.getElementById('chat-log');
       const questionList = document.getElementById('questions');
 
-      function append(html) {
+      function append(text) {
         const p = document.createElement('p');
-        p.innerHTML = html;
+        p.innerHTML = text;
         chatLog.appendChild(p);
         chatLog.scrollTop = chatLog.scrollHeight;
       }
@@ -135,7 +95,7 @@
         append(`<strong>You:</strong> ${message}`);
 
         try {
-          const username = localStorage.getItem('user') || null;   // kullanıcı adını da gönder
+          const username = localStorage.getItem('user') || null;
           const res = await fetch('/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

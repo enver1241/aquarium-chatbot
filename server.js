@@ -1,36 +1,28 @@
-// server.js — AquaChat (Node 20+, Render-friendly)
+// server.js — AquaChat (Node 20+)
 require("dotenv").config();
 const dns = require("dns");
-dns.setDefaultResultOrder?.("ipv4first"); // IPv6 önceliği sorunlarını önle
-
-const fs = require("fs");
-const path = require("path");
-const os = require("os");
+dns.setDefaultResultOrder?.("ipv4first");
 
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const path = require("path");
+const os = require("os");
 const Database = require("better-sqlite3");
 const bcrypt = require("bcryptjs");
 
-// ---- APP
 const app = express();
-const PORT = (process.env.PORT && Number(process.env.PORT)) || 3000;
+const PORT = process.env.PORT || 3000;
 const DB_FILE = process.env.DB_FILE || path.join(__dirname, "db.sqlite");
 
-// ---- MIDDLEWARE
 app.use(helmet());
 app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: "1mb" }));
-// <form method="POST"> (application/x-www-form-urlencoded) gövdelerini de al:
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true })); // <form> gövdesi için ŞART
 app.use(rateLimit({ windowMs: 60_000, max: 100 }));
+app.use(express.static(__dirname)); // html/js/css
 
-// Statik dosyaları projenin kökünden servis et (html/css/js/img)
-app.use(express.static(__dirname));
-
-// ---- DB
 const db = new Database(DB_FILE);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
@@ -68,65 +60,24 @@ try {
   console.warn("Admin seed failed:", e.message);
 }
 
-// ---- HELPERS
 const a = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
-// ---- ROOT / HEALTH
-// Ana sayfa: index.html varsa onu; yoksa Chatbot.html'i göster
-app.get("/", (_req, res) => {
-  const indexPath = path.join(__dirname, "index.html");
-  const fallbackPath = path.join(__dirname, "Chatbot.html");
-  const file = fs.existsSync(indexPath) ? indexPath : fallbackPath;
-  res.sendFile(file);
-});
-
-app.get("/diag", (_req, res) => {
-  res.json({
-    ok: true,
-    node: process.version,
-    hasKey: !!process.env.OPENAI_API_KEY,
-    env: process.env.NODE_ENV || "production",
-    db_file: DB_FILE
-  });
-});
-app.get("/__version", (_req, res) => {
-  res.json({
-    ts: new Date().toISOString(),
-    node: process.version,
-    commit: process.env.RENDER_GIT_COMMIT || null,
-    host: os.hostname()
-  });
-});
-app.get("/dns-test", (_req, res) => {
-  dns.lookup("api.openai.com", (err, address, family) => {
-    res.json({ host: "api.openai.com", error: err ? String(err) : null, address, family });
-  });
-});
-app.get("/net-test", a(async (_req, res) => {
-  const out = {};
-  try { out.cloudflare = (await fetch("https://1.1.1.1")).status; }
-  catch (e) { out.cloudflare = String(e?.message || e); }
-  try {
-    out.openai = (await fetch("https://api.openai.com/v1/models", {
-      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY || ""}` }
-    })).status;
-  } catch (e) { out.openai = String(e?.message || e); }
-  res.json(out);
+// health
+app.get("/", (_req, res) => res.sendFile(path.join(__dirname, "index.html")));
+app.get("/diag", (_req, res) => res.json({
+  ok: true, node: process.version,
+  hasKey: !!process.env.OPENAI_API_KEY,
+  env: process.env.NODE_ENV || "production",
+  db_file: DB_FILE
 }));
-app.get("/probe-openai", a(async (_req, res) => {
-  if (!process.env.OPENAI_API_KEY) return res.json({ error: "no OPENAI_API_KEY" });
-  try {
-    const r = await fetch("https://api.openai.com/v1/models", {
-      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }
-    });
-    const text = await r.text();
-    res.json({ ok: true, status: r.status, body: text.slice(0, 200) });
-  } catch (e) {
-    res.json({ error: "OpenAI probe failed", detail: String(e?.message || e) });
-  }
+app.get("/__version", (_req, res) => res.json({
+  ts: new Date().toISOString(),
+  node: process.version,
+  commit: process.env.RENDER_GIT_COMMIT || null,
+  host: os.hostname()
 }));
 
-// ---- API: AUTH & FEEDBACK
+// auth + feedback
 app.post("/register", a(async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: "Missing fields" });
@@ -139,7 +90,6 @@ app.post("/register", a(async (req, res) => {
     res.status(500).json({ error: "DB error", detail: String(e?.message || e) });
   }
 }));
-
 app.post("/login", a(async (req, res) => {
   const { username, password } = req.body || {};
   const row = db.prepare("SELECT id,username,password_hash FROM users WHERE username=?").get(username || "");
@@ -148,7 +98,6 @@ app.post("/login", a(async (req, res) => {
   }
   res.json({ ok: true, id: row.id, username: row.username });
 }));
-
 app.post("/feedback", a(async (req, res) => {
   const { name, email, message } = req.body || {};
   if (!message) return res.status(400).json({ error: "Message required" });
@@ -157,7 +106,7 @@ app.post("/feedback", a(async (req, res) => {
   res.json({ ok: true, id: info.lastInsertRowid });
 }));
 
-// ---- CHAT (OpenAI)
+// chat
 app.post("/chat", a(async (req, res) => {
   const { message, username } = req.body || {};
   if (!message) return res.status(400).json({ error: "Missing message" });
@@ -191,8 +140,7 @@ app.post("/chat", a(async (req, res) => {
   res.json({ ok: true, answer });
 }));
 
-// ---- 404
+// 404
 app.use((_req, res) => res.status(404).send("Not Found"));
 
-// ---- START (0.0.0.0 bağla; Render/Containers için güvenli)
-app.listen(PORT, "0.0.0.0", () => console.log("listening on", PORT));
+app.listen(PORT, () => console.log("listening on", PORT));

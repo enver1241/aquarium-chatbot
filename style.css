@@ -44,3 +44,8 @@ body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-ser
 .hidden{display:none}
 /* Safety: prevent overlays from blocking clicks */
 .overlay,.backdrop{pointer-events:none}
+.auth{max-width:360px;margin:24px auto;display:flex;flex-direction:column;gap:10px}
+.auth input,.auth button{padding:12px;border-radius:10px;border:1px solid #d1d5db}
+.auth button{background:#2563eb;color:#fff;border-color:transparent}
+.profile-card{max-width:520px;margin:24px auto;background:#fff;padding:16px;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+.avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid #e5e7eb;margin-bottom:12px}

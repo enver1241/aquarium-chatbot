@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Profile</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><a href="index.html" class="logo">🐟</a> <strong>My Profile</strong></div>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="Chatbot.html">Chatbot</a>
+      <a href="profile.html" style="background:#eef2ff">Profile</a>
+      <a id="logoutBtn" class="btn btn-outline" href="#">Logout</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="profile-card">
+      <img id="avatarImg" src="" alt="avatar" class="avatar" />
+      <form id="nameForm" class="auth">
+        <label>Display name</label>
+        <input name="display_name" placeholder="Your name" />
+        <button type="submit">Save</button>
+      </form>
+
+      <form id="avatarForm" class="auth" enctype="multipart/form-data">
+        <label>Avatar (jpg/png/webp, max 2MB)</label>
+        <input type="file" name="avatar" accept="image/*" />
+        <button type="submit">Upload</button>
+      </form>
+    </div>
+  </main>
+</body>
+</html>

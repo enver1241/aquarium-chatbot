@@ -8,27 +8,44 @@
   <script src="script.js" defer></script>
 </head>
 <body>
+  <!-- TOP BAR -->
   <header class="topbar">
-    <div class="brand"><a href="index.html" class="logo" style="text-decoration:none">🐠</a> <strong>Aquarium ChatBot</strong></div>
-    <div class="nav-actions">
+    <div class="brand">
+      <a href="index.html" class="logo" aria-label="Home">🐠</a>
+      <strong>Aquarium ChatBot</strong>
+    </div>
+
+    <nav class="nav-links">
+      <a id="navHome" href="index.html">Home</a>
+      <a id="navChatbot" href="Chatbot.html">Chatbot</a>
+      <a id="navFeedback" href="feedback.html">Feedback</a>
+      <a id="navProblem" href="problem.html">Report</a>
+      <a id="navAdmin" href="admin.html" class="hidden">Admin</a>
+      <a id="navLogin" class="btn btn-outline" href="login.html">Login</a>
+      <a id="navRegister" class="btn btn-outline" href="register.html">Register</a>
       <a id="newChatBtn" class="btn btn-ghost" href="Chatbot.html?new=1">+ New Chat</a>
       <a id="logoutBtn" class="btn btn-outline" href="login.html">Logout</a>
-    </div>
+    </nav>
   </header>
 
+  <!-- LAYOUT -->
   <div class="layout">
     <aside class="sidebar">
       <h3>Asked Questions</h3>
-      <button class="sidebar-btn"><a id="newChatBtn" href="Chatbot.html?new=1">+ New Chat</a></button>
-      <button class="sidebar-btn"><a id="logoutBtn" href="login.html">Logout</a></button>
+      <button class="sidebar-btn"><a href="Chatbot.html?new=1" id="newChatBtn">+ New Chat</a></button>
+      <button class="sidebar-btn"><a href="feedback.html">Feedback</a></button>
+      <button class="sidebar-btn"><a href="index.html">Home</a></button>
+      <button class="sidebar-btn"><a href="login.html" id="logoutBtn">Logout</a></button>
       <ul id="asked-questions" class="sidebar-list"></ul>
     </aside>
 
     <main class="main">
       <div id="chat-window">
-        <!-- Messages appear here -->
         <div class="message user">You: betta</div>
-        <div class="message bot">Bot: Betta fish, also known as Siamese fighting fish, are popular freshwater aquarium fish known for their vibrant colors and flowing fins. They thrive in warm water (24–28°C) and prefer a tank with plants and hiding places.</div>
+        <div class="message bot">
+          Bot: Betta fish, also known as Siamese fighting fish, are popular freshwater
+          aquarium fish… They thrive in warm water (24–28°C) and prefer a tank with plants.
+        </div>
       </div>
       <div class="composer">
         <input id="chat-input" type="text" placeholder="Type a message…">

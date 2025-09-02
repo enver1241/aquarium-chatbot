@@ -82,3 +82,37 @@
     }
   });
 })();
+// --- NAV görünürlüğü ve aktif sayfa işaretleme ---
+(function () {
+  function showAdminIfLogged() {
+    const isAdmin = localStorage.getItem("isAdmin") === "true";
+    const adminLink = document.getElementById("navAdmin");
+    if (adminLink) adminLink.classList.toggle("hidden", !isAdmin);
+  }
+
+  function markActiveNav() {
+    const path = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+    const map = {
+      "index.html": "navHome",
+      "chatbot.html": "navChatbot",
+      "feedback.html": "navFeedback",
+      "problem.html": "navProblem",
+      "admin.html": "navAdmin",
+      "login.html": "navLogin",
+      "register.html": "navRegister",
+    };
+    const id = map[path];
+    const el = id && document.getElementById(id);
+    if (el) el.style.background = "#eef2ff";
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      showAdminIfLogged();
+      markActiveNav();
+    });
+  } else {
+    showAdminIfLogged();
+    markActiveNav();
+  }
+})();

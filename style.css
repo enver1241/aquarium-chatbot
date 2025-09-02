@@ -1,3 +1,14 @@
+.topbar{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px 16px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.05);position:sticky;top:0;z-index:10}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}
+.brand .logo{font-size:22px;text-decoration:none}
+.nav-links{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.nav-links a{padding:8px 10px;border-radius:10px;text-decoration:none;color:#1f2937;border:1px solid transparent}
+.nav-links a:hover{background:#f3f4f6}
+.btn{border:1px solid rgba(0,0,0,.08);padding:10px 14px;border-radius:12px;text-decoration:none;display:inline-block}
+.btn-primary{background:#2563eb;color:#fff;border-color:transparent}
+.btn-outline{background:#fff;color:#1f2937}
+.btn-ghost{background:transparent}
+.hidden{display:none}
 :root{--bg:#f7fafc;--ink:#1f2937;--brand:#2563eb;--brand-2:#10b981}
 *{box-sizing:border-box}
 html,body{height:100%}

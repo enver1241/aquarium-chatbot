@@ -8,13 +8,25 @@
   <script src="script.js" defer></script>
 </head>
 <body>
+  <!-- TOP BAR -->
   <header class="topbar">
-    <div class="brand"><span class="logo">🐟</span> Aquarium Animals & ChatBot</div>
-    <div class="nav-actions">
+    <div class="brand">
+      <a href="index.html" class="logo" aria-label="Home">🐟</a>
+      <span>Aquarium Animals & ChatBot</span>
+    </div>
+
+    <nav class="nav-links">
+      <a id="navHome" href="index.html">Home</a>
+      <a id="navChatbot" href="Chatbot.html">Chatbot</a>
+      <a id="navFeedback" href="feedback.html">Feedback</a>
+      <a id="navProblem" href="problem.html">Report</a>
+      <a id="navAdmin" href="admin.html" class="hidden">Admin</a>
+      <a id="navLogin" class="btn btn-outline" href="login.html">Login</a>
+      <a id="navRegister" class="btn btn-outline" href="register.html">Register</a>
       <a id="newChatBtn" class="btn btn-ghost" href="Chatbot.html?new=1">+ New Chat</a>
       <a id="logoutBtn" class="btn btn-outline" href="login.html">Logout</a>
       <a class="btn btn-primary" href="Chatbot.html">Open Chat</a>
-    </div>
+    </nav>
   </header>
 
   <main class="container">
@@ -26,7 +38,11 @@
 
     <section class="container">
       <h2>About us</h2>
-      <p>This website is designed for users who want to learn about aquarium creatures. Users can ask questions through the AI‑powered chatbot and get answers instantly. Our project aims to make aquarium maintenance more accessible and fun.</p>
+      <p>
+        This website is designed for users who want to learn about aquarium creatures.
+        Users can ask questions through the AI-powered chatbot and get answers instantly.
+        Our project aims to make aquarium maintenance more accessible and fun.
+      </p>
     </section>
   </main>
 </body>

@@ -28,35 +28,3 @@
   </main>
 </body>
 </html>
-// --- Register formu (register.html) ---
-(function () {
-  if (!/register\.html$/i.test(location.pathname)) return;
-  const form = document.getElementById("registerForm");
-  if (!form) return;
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const display_name = form.querySelector('input[name="display_name"]').value.trim();
-    const email = form.querySelector('input[name="email"]').value.trim();
-    const password = form.querySelector('input[name="password"]').value.trim();
-
-    try {
-      const res = await fetch("/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, display_name })
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(data.error || "Register error");
-        return;
-      }
-      // Kayıt başarılı → otomatik login olur (server.js öyle yapıyor)
-      const next = new URLSearchParams(location.search).get("next") || "Chatbot.html";
-      location.href = next;
-    } catch (err) {
-      console.error(err);
-      alert("Network error");
-    }
-  });
-})();

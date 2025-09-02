@@ -174,16 +174,23 @@ app.post("/login", a(async (req, res) => {
 
 app.post("/feedback", a(async (req, res) => {
   const { name, email, message } = req.body || {};
-  if (!message) return res.status(400).json({ error: "Message required" });
+  if (!message) {
+    return res.status(400).json({ error: "Message required" });
+  }
 
-  // Debug log BURAYA
-  console.log("Feedback saved:", { name, email, message });
+  const info = db.prepare(
+    "INSERT INTO feedback (name,email,message) VALUES (?,?,?)"
+  ).run(name || null, email || null, message);
 
-  const info = db.prepare("INSERT INTO feedback (name,email,message) VALUES (?,?,?)")
-    .run(name || null, email || null, message);
+  // 🔑 Eğer form submit geldiyse HTML redirect yap
+  if ((req.headers["content-type"] || "").includes("application/x-www-form-urlencoded")) {
+    return res.redirect("/thanks.html");
+  }
 
+  // 🔑 Eğer fetch geldiyse JSON dön
   res.json({ ok: true, id: info.lastInsertRowid });
 }));
+
 
 // ---- CHAT (OpenAI)
 app.post("/chat", a(async (req, res) => {

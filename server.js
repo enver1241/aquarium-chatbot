@@ -137,11 +137,16 @@ app.post("/admin-login", (req, res) => {
   }
 });
 app.get("/admin/feedback", (req, res) => {
-  db.all("SELECT * FROM feedback", [], (err, rows) => {
-    if (err) return res.status(500).send("Database error");
+  try {
+    const rows = db
+      .prepare("SELECT id, COALESCE(name, email, username) AS username, message, created_at FROM feedback ORDER BY id DESC")
+      .all();
     res.json(rows);
-  });
+  } catch (e) {
+    res.status(500).json({ error: "Database error", detail: String(e?.message || e) });
+  }
 });
+
 
 // ---- API: AUTH & FEEDBACK
 app.post("/register", a(async (req, res) => {

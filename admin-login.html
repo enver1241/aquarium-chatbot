@@ -36,16 +36,16 @@
     <h2>🔐 Admin Login</h2>
 
     <!-- Backend'e doğrudan gider: POST /login -->
-    <form id="adminLoginForm" method="POST" action="/login" novalidate>
-      <!-- username'i sabitle -->
-      <input type="hidden" name="username" value="admin" />
-      <label for="adminPass">Admin Password</label>
-      <input type="password" id="adminPass" name="password" placeholder="Enter Admin Password" required />
-      <button type="submit">Login</button>
-      <p class="error" id="errorMsg"></p>
-      <p class="muted">İpucu: Parola, sunucudaki <code>ADMIN_PASSWORD</code> (yoksa varsayılan <code>admin123</code>).</p>
-    </form>
-  </div>
+    <form id="adminLoginForm" method="POST" action="/admin-login" data-no-ajax="true" autocomplete="off">
+  <label for="password">Admin Password</label>
+  <input type="password" id="password" name="password" required />
+  <button type="submit">Login</button>
+</form>
+
+<script>
+  // Eğer globalde tüm formları AJAX ile yakalayan bir kod varsa bu formu BYPASS etsin.
+  // (Burada preventDefault YOK — normal submit lazım ki redirect çalışsın.)
+</script>
 
   <!-- İstersen AJAX'lı gönderim için basit geliştirme -->
   <script>

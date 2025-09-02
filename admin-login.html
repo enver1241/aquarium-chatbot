@@ -41,6 +41,9 @@
   <input type="password" id="password" name="password" required />
   <button type="submit">Login</button>
 </form>
+// Şifre doğruysa:
+localStorage.setItem("isAdmin", "true");
+window.location.href = "admin.html";
 
 <script>
   // Eğer globalde tüm formları AJAX ile yakalayan bir kod varsa bu formu BYPASS etsin.

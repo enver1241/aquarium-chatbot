@@ -125,6 +125,23 @@ app.get("/probe-openai", a(async (_req, res) => {
     res.json({ error: "OpenAI probe failed", detail: String(e?.message || e) });
   }
 }));
+app.post("/admin-login", (req, res) => {
+  const { password } = req.body;
+
+  const ADMIN_PASS = process.env.ADMIN_PASSWORD || "admin123";
+
+  if (password === ADMIN_PASS) {
+    res.sendFile(__dirname + "/admin.html");  // Şifre doğru → admin panel aç
+  } else {
+    res.status(401).send("Wrong password. <a href='/admin-login.html'>Try again</a>");
+  }
+});
+app.get("/admin/feedback", (req, res) => {
+  db.all("SELECT * FROM feedback", [], (err, rows) => {
+    if (err) return res.status(500).send("Database error");
+    res.json(rows);
+  });
+});
 
 // ---- API: AUTH & FEEDBACK
 app.post("/register", a(async (req, res) => {

@@ -3,97 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Panel - Feedback Records</title>
+  <title>Admin — Feedback Submissions</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 40px;
-      background-color: #f9f9f9;
-    }
-
-    h1 {
-      text-align: center;
-      color: #2c3e50;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 40px;
-      background: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-
-    th, td {
-      padding: 12px 16px;
-      border: 1px solid #ddd;
-      text-align: left;
-    }
-
-    th {
-      background-color: #0077b6;
-      color: white;
-    }
-
-    tr:nth-child(even) {
-      background-color: #f0f8ff;
-    }
-
-    .back-btn {
-      display: inline-block;
-      margin-top: 30px;
-      padding: 10px 20px;
-      background-color: #0077b6;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-    }
-
-    .back-btn:hover {
-      background-color: #005f86;
-    }
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto; background:#f6f8fb; margin:0}
+    .wrap{max-width:1100px; margin:6vh auto; padding:0 16px}
+    h2{display:flex; align-items:center; gap:8px; margin:0 0 18px}
+    table{width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.06)}
+    th,td{padding:12px 10px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align:top}
+    th{background:#0d6efd; color:#fff; font-weight:600}
+    tr:last-child td{border-bottom:0}
+    .muted{color:#6b7280; font-size:13px; margin:10px 0 18px}
+    .btn{display:inline-block; background:#0f172a; color:#fff; text-decoration:none; padding:10px 14px; border-radius:10px; margin:16px 0}
+    .empty{padding:24px; text-align:center; color:#64748b}
+    .nowrap{white-space:nowrap}
   </style>
 </head>
 <body>
+  <div class="wrap">
+    <h2>📝 Feedback Submissions</h2>
+    <p class="muted">This table loads data from <code>/admin/feedback</code>.</p>
 
-  <h1>📋 Feedback Submissions</h1>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th class="nowrap">ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Message</th>
+          <th class="nowrap">Created</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
 
-  <table id="feedbackTable">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Email</th>
-        <th>Message</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Data will be injected by JavaScript -->
-    </tbody>
-  </table>
-
-  <a href="index.html" class="back-btn">← Back to Home</a>
+    <a class="btn" href="index.html">← Back to Home</a>
+  </div>
 
   <script>
-    fetch('/api/feedbacks')
-      .then(response => response.json())
-      .then(data => {
-        const tbody = document.querySelector('#feedbackTable tbody');
-        data.forEach(item => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${item.id}</td>
-            <td>${item.name}</td>
-            <td>${item.email}</td>
-            <td>${item.message}</td>
-          `;
-          tbody.appendChild(row);
-        });
-      })
-      .catch(err => {
-        console.error('❌ Error loading feedbacks:', err);
-      });
+  async function loadFeedback(){
+    const tbody = document.querySelector("#tbl tbody");
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Loading…</td></tr>`;
+    try{
+      const res = await fetch("/admin/feedback", { cache: "no-store" });
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">No feedback yet.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = "";
+      for (const row of data){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="nowrap">${row.id ?? ""}</td>
+          <td>${row.name ?? ""}</td>
+          <td>${row.email ?? ""}</td>
+          <td>${(row.message ?? "").replace(/\n/g,"<br>")}</td>
+          <td class="nowrap">${row.created_at ?? ""}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }catch(err){
+      tbody.innerHTML = `<tr><td colspan="5" class="empty">Failed to load feedback.</td></tr>`;
+      console.error(err);
+    }
+  }
+  loadFeedback();
   </script>
-
 </body>
 </html>

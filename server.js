@@ -148,6 +148,7 @@ app.get("/admin/feedback", (req, res) => {
 });
 
 
+
 // ---- API: AUTH & FEEDBACK
 app.post("/register", a(async (req, res) => {
   const { username, password } = req.body || {};
@@ -174,8 +175,13 @@ app.post("/login", a(async (req, res) => {
 app.post("/feedback", a(async (req, res) => {
   const { name, email, message } = req.body || {};
   if (!message) return res.status(400).json({ error: "Message required" });
+
+  // Debug log BURAYA
+  console.log("Feedback saved:", { name, email, message });
+
   const info = db.prepare("INSERT INTO feedback (name,email,message) VALUES (?,?,?)")
     .run(name || null, email || null, message);
+
   res.json({ ok: true, id: info.lastInsertRowid });
 }));
 

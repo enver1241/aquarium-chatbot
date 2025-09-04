@@ -57,9 +57,12 @@ function appendMsg(role, text) {
   win.scrollTop = win.scrollHeight;
 }
 
+// ============ chat handler ============
+
 async function handleSend() {
-  const input = document.querySelector("#chat-input");
+  const input = $("#chat-input");
   if (!input || !input.value.trim()) return;
+
   const text = input.value.trim();
   input.value = "";
   appendMsg("user", text);
@@ -69,15 +72,23 @@ async function handleSend() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text })
+      // same-origin olduğumuz için cookie otomatik gönderilir
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Chat error");
+
+    // Hata durumunda da gövdeyi okumayı dene ki mesajı gösterebilelim
+    let data = {};
+    try { data = await res.json(); } catch { /* boş bırak */ }
+
+    if (!res.ok) {
+      appendMsg("bot", `Bot: ${data.error || res.statusText || "Connection error."}`);
+      return;
+    }
+
     appendMsg("bot", data.reply || "…");
   } catch (e) {
     appendMsg("bot", "Bot: Connection error.");
   }
 }
-
 
 // ============ navbar (responsive + state) ============
 
@@ -157,8 +168,11 @@ function renderNavUser(user) {
       img = document.createElement("img");
       img.id = "navAvatar";
       Object.assign(img.style, {
-        width: "28px", height: "28px", borderRadius: "50%",
-        objectFit: "cover", marginLeft: "6px"
+        width: "28px",
+        height: "28px",
+        borderRadius: "50%",
+        objectFit: "cover",
+        marginLeft: "6px",
       });
       prof.after(img);
     }
@@ -173,7 +187,7 @@ async function hydrateNavbar() {
     const resp = await fetch("/auth/me");
     const data = await resp.json();
     if (data.loggedIn) renderNavUser(data.user);
-  } catch {}
+  } catch { /* sessiz */ }
 }
 
 // ============ page-specific ============
@@ -222,7 +236,8 @@ function wireAuthForms() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
         });
-        const data = await res.json();
+        let data = {};
+        try { data = await res.json(); } catch {}
         if (!res.ok) return alert(data.error || "Login error");
         const next = new URLSearchParams(location.search).get("next") || "Chatbot.html";
         location.href = next;
@@ -244,7 +259,8 @@ function wireAuthForms() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password, display_name }),
         });
-        const data = await res.json();
+        let data = {};
+        try { data = await res.json(); } catch {}
         if (!res.ok) return alert(data.error || "Register error");
         const next = new URLSearchParams(location.search).get("next") || "Chatbot.html";
         location.href = next;
@@ -344,3 +360,4 @@ domReady(() => {
     });
   }
 });
+s

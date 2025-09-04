@@ -9,26 +9,19 @@ const SQLiteStore = require("connect-sqlite3")(session);
 const bcrypt = require("bcrypt");
 const sqlite3 = require("sqlite3").verbose();
 const multer = require("multer");
-const cors = require("cors");
 const { OpenAI } = require("openai");
 
 const app = express();
 
-/* ---------- CORS (frontend -> backend) ---------- */
-app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "https://aqualifeai.com"   // prod domainin buysa tut, değilse kendi domaininle değiştir
-  ],
-  credentials: false
-}));
-
-/* ---------- Parsers ---------- */
+/* ------------------------ App & Middleware ------------------------ */
+app.disable("x-powered-by");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/* ---------- Session (login için) ---------- */
+// Production arkasında proxy varsa (Railway/Render/Heroku vb.)
+app.set("trust proxy", 1);
+
+// Kalıcı session (sqlite dosyasında tutulur)
 app.use(
   session({
     name: "aquabot.sid",
@@ -39,14 +32,25 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      // prod https altında isen şunu açabilirsin: secure: true
+      secure: process.env.NODE_ENV === "production", // https'ta true olmalı
       maxAge: 1000 * 60 * 60 * 24 * 30, // 30 gün
     },
   })
 );
 
-/* ---------- DB ---------- */
-const db = new sqlite3.Database(path.join(__dirname, "db.sqlite"));
+// Statik dosyalar
+const publicDir = __dirname; // index.html, style.css, script.js...
+app.use(express.static(publicDir));
+
+// Upload klasörü
+const uploadsDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+app.use("/uploads", express.static(uploadsDir));
+
+/* ------------------------ Database ------------------------ */
+const dbFile = path.join(__dirname, "db.sqlite");
+const db = new sqlite3.Database(dbFile);
+
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
@@ -58,34 +62,33 @@ db.serialize(() => {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS feedbacks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      message TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 });
 
-/* ---------- Statik dosyalar ---------- */
-const uploadsDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
-app.use("/uploads", express.static(uploadsDir));
-app.use(express.static(__dirname)); // index.html, css, js
-
-/* ---------- Healthcheck ---------- */
-app.get("/diag", (_, res) => {
-  res.json({
-    ok: true,
-    env: process.env.RENDER ? "render" : "local",
-    hasKey: !!process.env.OPENAI_API_KEY,
-  });
-});
-
-/* ---------- Auth helper ---------- */
+/* ------------------------ Helpers ------------------------ */
 function requireAuth(req, res, next) {
   if (req.session?.userId) return next();
+
+  // HTML istekler login'e yönlendirilsin
   if (req.accepts("html")) {
     const nextUrl = encodeURIComponent(req.originalUrl || "/Chatbot.html");
     return res.redirect(`/login.html?next=${nextUrl}`);
   }
+  // API ise 401
   return res.status(401).json({ error: "Unauthorized" });
 }
 
-/* ---------- Me (navbar/render icin) ---------- */
+/* ------------------------ Auth & User ------------------------ */
+
+// Me (navbar için)
 app.get("/auth/me", (req, res) => {
   if (!req.session?.userId) return res.json({ loggedIn: false });
   db.get(
@@ -98,14 +101,16 @@ app.get("/auth/me", (req, res) => {
   );
 });
 
-/* ---------- Register/Login/Logout ---------- */
+// Register
 app.post("/register", async (req, res) => {
-  const { email, password, display_name } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: "Missing fields" });
   try {
+    const { email, password, display_name } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
     const hash = await bcrypt.hash(password, 10);
     db.run(
-      "INSERT INTO users(email, password_hash, display_name) VALUES(?,?,?)",
+      "INSERT INTO users(email, password_hash, display_name) VALUES (?,?,?)",
       [email.toLowerCase(), hash, display_name || email.split("@")[0]],
       function (err) {
         if (err) {
@@ -119,14 +124,16 @@ app.post("/register", async (req, res) => {
       }
     );
   } catch (e) {
-    console.error(e);
     res.status(500).json({ error: "Server error" });
   }
 });
 
+// Login
 app.post("/login", (req, res) => {
   const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: "Missing fields" });
+  if (!email || !password) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
   db.get(
     "SELECT id, password_hash FROM users WHERE email = ?",
     [email.toLowerCase()],
@@ -141,11 +148,17 @@ app.post("/login", (req, res) => {
   );
 });
 
+// Logout
 app.post("/logout", (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  req.session.destroy(() => {
+    res.clearCookie("aquabot.sid");
+    res.json({ ok: true });
+  });
 });
 
-/* ---------- Profil (korumalı) ---------- */
+/* ------------------------ Profile ------------------------ */
+
+// Profil görüntüle (korumalı)
 app.get("/profile", requireAuth, (req, res) => {
   db.get(
     "SELECT id, email, display_name, avatar_url FROM users WHERE id = ?",
@@ -157,6 +170,7 @@ app.get("/profile", requireAuth, (req, res) => {
   );
 });
 
+// Profil güncelle (şimdilik display_name)
 app.put("/profile", requireAuth, (req, res) => {
   const { display_name } = req.body || {};
   db.run(
@@ -169,82 +183,99 @@ app.put("/profile", requireAuth, (req, res) => {
   );
 });
 
-/* ---------- Avatar upload ---------- */
+// Avatar upload
 const storage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, uploadsDir),
   filename: (_, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, "avatar_" + Date.now() + ext);
+    cb(null, `avatar_${Date.now()}${ext}`);
   },
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 1024 * 1024 * 2 },
+  limits: { fileSize: 1024 * 1024 * 2 }, // 2MB
   fileFilter: (_, file, cb) => {
     const ok = /image\/(png|jpe?g|webp)/i.test(file.mimetype);
-    cb(ok ? null : new Error("Only image files allowed"), ok);
+    cb(ok ? null : new Error("Only PNG/JPG/WEBP images allowed"), ok);
   },
 }).single("avatar");
 
 app.post("/profile/avatar", requireAuth, (req, res) => {
   upload(req, res, (err) => {
     if (err) return res.status(400).json({ error: String(err.message || err) });
-    if (!req.file) return res.status(400).json({ error: "No file" });
     const rel = "/uploads/" + path.basename(req.file.path);
-    db.run("UPDATE users SET avatar_url = ? WHERE id = ?", [rel, req.session.userId], (e2) => {
-      if (e2) return res.status(500).json({ error: "DB error" });
-      res.json({ ok: true, avatar_url: rel });
-    });
+    db.run(
+      "UPDATE users SET avatar_url = ? WHERE id = ?",
+      [rel, req.session.userId],
+      (e2) => {
+        if (e2) return res.status(500).json({ error: "DB error" });
+        res.json({ ok: true, avatar_url: rel });
+      }
+    );
   });
 });
 
-/* ---------- Korumalı sayfa (HTML) ----------- */
+/* ------------------------ Feedback ------------------------ */
+
+app.post("/feedback", requireAuth, (req, res) => {
+  const { message } = req.body || {};
+  if (!message) return res.status(400).json({ error: "Message required" });
+  db.run(
+    "INSERT INTO feedbacks(user_id, message) VALUES(?,?)",
+    [req.session.userId, message],
+    function (err) {
+      if (err) return res.status(500).json({ error: "DB error" });
+      res.json({ ok: true, id: this.lastID });
+    }
+  );
+});
+
+/* ------------------------ Chatbot (korumalı) ------------------------ */
+
+// Chatbot sayfasını sadece girişe izin vererek sun
 app.get("/Chatbot.html", requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, "Chatbot.html"));
+  res.sendFile(path.join(publicDir, "Chatbot.html"));
 });
 
-/* =======================================================
-   CHAT API — LOGIN ZORUNLU DEĞİL (demo’dan çıkış için)
-   (İstersen header token ile koruyabilirsin)
-======================================================= */
-
-// Basit API token koruması istersen .env'ye API_TOKEN koy:
-app.use("/chat", (req, res, next) => {
-  const expected = process.env.API_TOKEN;
-  if (!expected) return next();
-  const got = req.headers["x-api-token"];
-  if (got !== expected) return res.status(401).json({ error: "unauthorized" });
-  next();
-});
-
-app.post("/chat", async (req, res) => {
+// Chat API
+app.post("/chat", requireAuth, async (req, res) => {
   try {
     const { message } = req.body || {};
     if (!message) return res.status(400).json({ error: "Missing message" });
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) return res.json({ reply: "Server is missing OPENAI_API_KEY." });
-
-    const client = new OpenAI({ apiKey });
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const out = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.6,
-      max_tokens: 700, // daha ayrıntılı yanıt için artırıldı
+      temperature: 0.3,
       messages: [
-        { role: "system",
-          content: "You are AquaLifeAI, an aquarium expert assistant. Provide detailed, safe, step-by-step guidance using metric units." },
-        { role: "user", content: message }
-      ]
+        { role: "system", content: "You are an aquarium assistant for hobbyists. Keep answers concise and practical." },
+        { role: "user", content: message },
+      ],
     });
 
-    const reply = out.choices?.[0]?.message?.content?.trim() || "I couldn't generate a reply.";
+    const reply =
+      out?.choices?.[0]?.message?.content?.trim() || "I couldn't generate a reply.";
     res.json({ reply });
   } catch (e) {
-    console.error("CHAT error:", e?.response?.data || e);
+    console.error("Chat error:", e?.response?.data || e);
     res.status(500).json({ error: "Connection error." });
   }
 });
 
-/* ---------- Sunucu ---------- */
+/* ------------------------ Fallbacks ------------------------ */
+
+// Kök / -> index.html
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(publicDir, "index.html"));
+});
+
+// 404 için sade yanıt (SPA değil)
+app.use((req, res) => {
+  res.status(404).send("Not Found");
+});
+
+/* ------------------------ Start ------------------------ */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("listening on " + PORT));
+app.listen(PORT, () => {
+  console.log(`AquaLifeAI server listening on http://localhost:${PORT}`);
+});

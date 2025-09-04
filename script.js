@@ -57,21 +57,27 @@ function appendMsg(role, text) {
   win.scrollTop = win.scrollHeight;
 }
 
-// Demo chat (istersen /chat fetch ile değiştir)
 async function handleSend() {
-  const input = $("#chat-input");
+  const input = document.querySelector("#chat-input");
   if (!input || !input.value.trim()) return;
   const text = input.value.trim();
   input.value = "";
   appendMsg("user", text);
 
-  // Basit demo yanıt
-  let reply = "Bot: This is a demo reply. Hook me to your server /chat.";
-  if (/betta/i.test(text)) {
-    reply = "Bot: Betta fish like 24–28°C water, low flow, many hiding spots.";
+  try {
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Chat error");
+    appendMsg("bot", data.reply || "…");
+  } catch (e) {
+    appendMsg("bot", "Bot: Connection error.");
   }
-  appendMsg("bot", reply);
 }
+
 
 // ============ navbar (responsive + state) ============
 

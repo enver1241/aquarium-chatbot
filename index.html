@@ -1,40 +1,55 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <title>AquaLife AI Chat</title>
-    <style>
-      body { font-family: system-ui, Arial; margin:0; background:#f5f7fb; }
-      .wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
-      .panel { background:#fff; border-radius:16px; padding:16px; box-shadow:0 6px 24px rgba(0,0,0,.06); }
-      .log { height: 60vh; overflow:auto; list-style:none; padding:0; margin:0 0 12px; }
-      .bubble { margin: 8px 0; padding:12px 14px; border-radius:14px; display:inline-block; max-width: 90%; line-height:1.4; }
-      .you { background:#e6f0ff; align-self:flex-end; }
-      .bot { background:#f1f3f5; }
-      .row { display:flex; gap:8px; }
-      input { flex:1; padding:12px 14px; border-radius:12px; border:1px solid #d5d9e2; font-size:16px; }
-      button { padding:12px 16px; border-radius:12px; border:0; background:#16a34a; color:#fff; font-weight:600; }
-      button:disabled { opacity:.6; }
-      .footer { color:#667085; font-size:12px; margin-top:8px; text-align:center; }
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <h2>🐠 AquaLife AI Chat</h2>
-      <div class="panel">
-        <ul id="log" class="log"></ul>
-        <form id="chatForm" class="row">
-          <input id="msg" placeholder="Type a message..." autocomplete="off" />
-          <button id="sendBtn" type="submit">Send</button>
-        </form>
-      </div>
-      <div class="footer">Connected to <code>/chat</code></div>
-    </div>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aquarium ChatBot - Home</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <!-- TOP BAR (TEK) -->
+  <header class="topbar">
+    <!-- Marka / Logo -->
+    <a href="index.html" class="brand" aria-label="AquaLifeAi Home">
+      <img src="aqualifeai.png" alt="AquaLifeAi Logo" class="brand-logo" />
+      <span class="brand-text">AquaLifeAi</span>
+    </a>
 
-    <script src="./script.js"></script>
-  </body>
+    <!-- Balık ikonlu menü butonu (mobilde görünür) -->
+    <button class="nav-toggle" aria-label="Menüyü aç/kapat" aria-expanded="false" aria-controls="navMenu">
+      🐟
+    </button>
+
+    <!-- Menü -->
+    <nav id="navMenu" class="nav-links" role="navigation">
+      <a id="navHome" href="index.html">Home</a>
+      <a id="navChatbot" href="Chatbot.html">Chatbot</a>
+      <a id="navFeedback" href="feedback.html">Feedback</a>
+      <a id="navReport" href="problem.html">Report</a>
+      <a id="navLogin" class="btn btn-outline" href="login.html">Login</a>
+      <a id="navRegister" class="btn btn-outline" href="register.html">Register</a>
+      <a id="newChatBtn" class="btn btn-ghost" href="Chatbot.html?new=1">+ New Chat</a>
+      <a id="logoutBtn" class="btn btn-outline" href="#">Logout</a>
+      <a class="btn btn-primary" href="Chatbot.html">Open Chat</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Welcome to the Aquarium ChatBot Website</h1>
+      <p>Discover aquatic life, get care tips, and interact with our intelligent bot!</p>
+      <a id="goChatbot" class="btn btn-primary" href="Chatbot.html">Go to ChatBot</a>
+    </section>
+
+    <section class="container">
+      <h2>About us</h2>
+      <p>
+        This website is designed for users who want to learn about aquarium creatures.
+        Users can ask questions through the AI-powered chatbot and get answers instantly.
+        Our project aims to make aquarium maintenance more accessible and fun.
+      </p>
+    </section>
+  </main>
+</body>
 </html>

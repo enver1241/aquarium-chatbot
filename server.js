@@ -6,10 +6,11 @@ const fs = require("fs");
 const express = require("express");
 const session = require("express-session");
 const SQLiteStore = require("connect-sqlite3")(session);
-const bcrypt = require("bcryptjs");               // <— bcryptjs
+const bcrypt = require("bcryptjs");               
 const sqlite3 = require("sqlite3").verbose();
 const multer = require("multer");
-const OpenAI = require("openai");                 // <— CJS default import
+const _OpenAI = require("openai");
+const OpenAI = _OpenAI.OpenAI || _OpenAI;                
 
 if (!process.env.OPENAI_API_KEY) {
   console.warn("[WARN] OPENAI_API_KEY not set. /chat will return 500.");

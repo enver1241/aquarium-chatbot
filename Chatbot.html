@@ -46,19 +46,6 @@
       <button class="sidebar-btn"><a href="#" class="js-logout">Logout</a></button>
       <ul id="asked-questions" class="sidebar-list"></ul>
     </aside>
-    <script>
-async function sendChat(message){
-  const r = await fetch('/api/chat',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    credentials:'include',
-    body: JSON.stringify({ message })
-  });
-  const data = await r.json();
-  if(!r.ok){ throw new Error(data.error || 'Connection error'); }
-  return data.reply || 'No reply';
-}
-</script>
     <!-- ANA SOHBET ALANI -->
     <main class="main">
       <div id="chat-window"><!-- boş başlar; mesajları JS ekleyecek --></div>

@@ -76,11 +76,11 @@ async function handleSend() {
   appendMsg("user", text);
 
   try {
-    const res = await fetch("/chat", {
+    const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ message: text })
-      // same-origin olduğumuz için cookie otomatik gönderilir
     });
 
     // Hata durumunda da gövdeyi okumayı dene ki mesajı gösterebilelim
@@ -192,9 +192,9 @@ async function hydrateNavbar() {
   showAdminIfLogged();
   markActiveNav();
   try {
-    const resp = await fetch("/auth/me");
+    const resp = await fetch("/api/me");
     const data = await resp.json();
-    if (data.loggedIn) renderNavUser(data.user);
+    if (data.user) renderNavUser(data.user);
   } catch { /* sessiz */ }
 }
 
@@ -202,10 +202,10 @@ async function hydrateNavbar() {
 
 function guardChatbotPage() {
   if (!/chatbot\.html$/i.test(location.pathname)) return;
-  fetch("/auth/me")
+  fetch("/api/me")
     .then((r) => r.json())
     .then((d) => {
-      if (!d.loggedIn) {
+      if (!d.user) {
         const nextUrl = encodeURIComponent("Chatbot.html");
         location.href = `login.html?next=${nextUrl}`;
       }
@@ -239,10 +239,11 @@ function wireAuthForms() {
         e.preventDefault();
         const email = form.querySelector('input[name="email"]').value.trim();
         const password = form.querySelector('input[name="password"]').value.trim();
-        const res = await fetch("/login", {
+        const res = await fetch("/api/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          credentials: "include",
+          body: JSON.stringify({ username: email, password }),
         });
         let data = {};
         try { data = await res.json(); } catch {}
@@ -262,10 +263,11 @@ function wireAuthForms() {
         const display_name = form.querySelector('input[name="display_name"]').value.trim();
         const email = form.querySelector('input[name="email"]').value.trim();
         const password = form.querySelector('input[name="password"]').value.trim();
-        const res = await fetch("/register", {
+        const res = await fetch("/api/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, display_name }),
+          credentials: "include",
+          body: JSON.stringify({ username: email, password }),
         });
         let data = {};
         try { data = await res.json(); } catch {}
@@ -338,7 +340,7 @@ domReady(() => {
   safeBind("logoutBtn", async (e) => {
     e.preventDefault();
     cleanupOnLogout();
-    try { await fetch("/logout", { method: "POST" }); } catch {}
+    try { await fetch("/api/logout", { method: "POST", credentials: "include" }); } catch {}
     location.href = "login.html";
   });
 
@@ -347,7 +349,7 @@ domReady(() => {
   bindAll(".js-logout", async (e) => {
     e.preventDefault();
     cleanupOnLogout();
-    try { await fetch("/logout", { method: "POST" }); } catch {}
+    try { await fetch("/api/logout", { method: "POST", credentials: "include" }); } catch {}
     location.href = "login.html";
   });
 
@@ -368,4 +370,3 @@ domReady(() => {
     });
   }
 });
-s

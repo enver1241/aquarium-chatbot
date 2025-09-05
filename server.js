@@ -248,6 +248,37 @@ app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal error' });
 });
+// ---- Legacy aliases (frontend /register, /login, /chat kullanan sürümler için) ----
+
+// /register  -> /api/register
+app.post('/register', (req, res) => {
+  const { username, email, password } = req.body || {};
+  // email ile gelen eski formları da destekle
+  req.body = { username: username || email || '', password: password || '' };
+  return app._router.handle(
+    Object.assign(req, { url: '/api/register', originalUrl: '/api/register' }),
+    res
+  );
+});
+
+// /login  -> /api/login
+app.post('/login', (req, res) => {
+  const { username, email, password } = req.body || {};
+  req.body = { username: username || email || '', password: password || '' };
+  return app._router.handle(
+    Object.assign(req, { url: '/api/login', originalUrl: '/api/login' }),
+    res
+  );
+});
+
+// /chat  -> /api/chat
+app.post('/chat', (req, res) => {
+  return app._router.handle(
+    Object.assign(req, { url: '/api/chat', originalUrl: '/api/chat' }),
+    res
+  );
+});
+
 
 // ==== START ====
 const server = app.listen(PORT, () => {

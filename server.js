@@ -175,7 +175,11 @@ app.post('/api/chat', async (req, res) => {
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
 
   try {
-    const client = new OpenAI({ apiKey: OPENAI_API_KEY });
+    const client = new OpenAI({ 
+      apiKey: OPENAI_API_KEY,
+      timeout: 30000, // 30 second timeout
+      maxRetries: 2
+    });
 
     const completion = await client.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -194,9 +198,20 @@ app.post('/api/chat', async (req, res) => {
     console.error('- Status:', e?.status);
     console.error('- Code:', e?.code);
     console.error('- Message:', e?.message);
-    console.error('- Error object:', JSON.stringify(e, null, 2));
+    console.error('- Type:', e?.type);
+    console.error('- Name:', e?.name);
     if (e?.response?.data) console.error('- Response data:', JSON.stringify(e.response.data, null, 2));
-    res.status(502).json({ error: 'Connection error' });
+    
+    // Handle specific error types
+    if (e?.code === 'ECONNRESET' || e?.code === 'ETIMEDOUT' || e?.name === 'ConnectTimeoutError') {
+      res.status(503).json({ error: 'Service temporarily unavailable. Please try again.' });
+    } else if (e?.status === 429) {
+      res.status(429).json({ error: 'Rate limit exceeded. Please wait a moment.' });
+    } else if (e?.status === 401) {
+      res.status(500).json({ error: 'API configuration error' });
+    } else {
+      res.status(502).json({ error: 'Connection error' });
+    }
   }
 });
 

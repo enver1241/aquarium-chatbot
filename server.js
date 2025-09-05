@@ -168,7 +168,7 @@ app.post('/api/feedback', (req, res) => {
   }
 });
 
-// --- OpenAI chat (Responses API, daha stabil)
+// --- OpenAI chat
 app.post('/api/chat', async (req, res) => {
   const { message = '' } = req.body || {};
   if (!message || typeof message !== 'string') return res.status(400).json({ error: 'Message required' });
@@ -177,24 +177,19 @@ app.post('/api/chat', async (req, res) => {
   try {
     const client = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-    const r = await client.responses.create({
+    const completion = await client.chat.completions.create({
       model: 'gpt-4o-mini',
-      input: [
+      messages: [
         { role: 'system', content: 'You are AquaLifeAI, a helpful aquarium assistant. Keep answers concise and safe.' },
         { role: 'user', content: message }
       ],
       temperature: 0.4,
-      max_output_tokens: 400,
+      max_tokens: 400,
     });
 
-    const reply =
-      (r.output_text && r.output_text.trim()) ||
-      (r.output?.[0]?.content?.[0]?.text?.value?.trim()) ||
-      'No reply';
-
+    const reply = completion.choices[0]?.message?.content?.trim() || 'No reply';
     res.json({ reply });
   } catch (e) {
-    // Ayrıntılı log: konsola tam hata dök, istemciye kısa mesaj ver
     console.error('OpenAI error:', e?.status || e?.code, e?.message);
     if (e?.response?.data) console.error('OpenAI data:', e.response.data);
     res.status(502).json({ error: 'Connection error' });

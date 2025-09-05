@@ -1,4 +1,4 @@
-// server.js — AquaLifeAI (Node 20+)
+// server.js — AquaLifeAI (Node 20, better-sqlite3, OpenAI Responses API)
 require('dotenv').config();
 
 const path = require('path');
@@ -13,14 +13,12 @@ const session = require('express-session');
 const BetterSqlite3Store = require('better-sqlite3-session-store')(session);
 const OpenAI = require('openai');
 
-// ==== ENV ====
-const PORT         = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev_secret';
-const DB_PATH      = process.env.DB_PATH || path.join(__dirname, 'db.sqlite');
-const SESSIONS_DB  = process.env.SESSIONS_DB || path.join(__dirname, 'sessions.sqlite');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'db.sqlite');
+const SESSIONS_DB = process.env.SESSIONS_DB || path.join(__dirname, 'sessions.sqlite');
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 
-// ==== APP ====
 const app = express();
 app.set('trust proxy', 1);
 
@@ -31,22 +29,14 @@ app.use(express.json({ limit: '1mb' }));
 
 // CORS
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://aquarium-chatbot.onrender.com',
-    'https://aqualifeai.com',
-  ],
+  origin: ['http://localhost:3000', 'https://aquarium-chatbot.onrender.com', 'https://aqualifeai.com'],
   methods: ['GET', 'POST'],
   credentials: true,
 }));
 
-// Rate limit (API için)
-app.use('/api/', rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
-  standardHeaders: true,
-  legacyHeaders: false,
-}));
+// Rate limit (sadece /api)
+const limiter = rateLimit({ windowMs: 60_000, max: 60, standardHeaders: true, legacyHeaders: false });
+app.use('/api/', limiter);
 
 // Basit log
 app.use((req, _res, next) => {
@@ -54,43 +44,36 @@ app.use((req, _res, next) => {
   next();
 });
 
-// ==== STATIC ====
+// Static + index
 app.use(express.static(__dirname, { extensions: ['html'] }));
-app.get(['/', '/index.html'], (_req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-// ==== HELPERS ====
+// --- Helpers
 function ensureFile(filePath) {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, '');
 }
-function isAuthed(req) {
-  return !!(req.session && req.session.user);
-}
 
-// ==== DB INIT ====
+// --- DB
 ensureFile(DB_PATH);
 const db = new BetterSqlite3(DB_PATH);
 db.exec(`
   PRAGMA journal_mode = WAL;
-  CREATE TABLE IF NOT EXISTS users (
+  CREATE TABLE IF NOT EXISTS users(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     created_at TEXT DEFAULT (datetime('now'))
   );
-  CREATE TABLE IF NOT EXISTS feedback (
+  CREATE TABLE IF NOT EXISTS feedback(
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    email TEXT,
-    message TEXT,
+    name TEXT, email TEXT, message TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
 `);
 
-// ==== SESSIONS ====
+// --- Sessions
 ensureFile(SESSIONS_DB);
 const sessionDb = new BetterSqlite3(SESSIONS_DB);
 app.use(session({
@@ -102,37 +85,29 @@ app.use(session({
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: {
-    sameSite: 'lax',
-    secure: false,                 // HTTPS altında true yap
-    maxAge: 24 * 60 * 60 * 1000,
-  },
+  cookie: { sameSite: 'lax', secure: false, maxAge: 24 * 60 * 60 * 1000 },
 }));
 
-// ==== DIAG ====
+const isAuthed = (req) => !!(req.session && req.session.user);
+
+// --- Health & Diag
 app.get('/health', (_req, res) => res.type('text/plain').send('ok'));
-app.get('/diag', async (_req, res) => {
-  const info = {
-    ok: true,
-    node: process.version,
-    hasKey: !!OPENAI_API_KEY,
-    keyPrefix: OPENAI_API_KEY ? OPENAI_API_KEY.slice(0, 7) : null,
-  };
-  if (!OPENAI_API_KEY) return res.json(info);
+app.get('/diag', (_req, res) => {
+  res.json({ ok: true, node: process.version, hasKey: !!OPENAI_API_KEY });
+});
+app.get('/probe_openai', async (_req, res) => {
   try {
-    const client = new OpenAI({ apiKey: OPENAI_API_KEY });
-    // küçük bir çağrı: model listesi (başarılıysa bağlantı var demektir)
-    const list = await client.models.list();
-    info.models = Array.isArray(list.data) ? list.data.length : 0;
-    res.json(info);
+    const r = await fetch('https://api.openai.com/v1/models', {
+      headers: { Authorization: `Bearer ${OPENAI_API_KEY}` }
+    });
+    const body = await r.text();
+    res.json({ ok: true, status: r.status, ct: r.headers.get('content-type'), bodyStart: body.slice(0, 120) });
   } catch (e) {
-    console.error('DIAG OpenAI error:', e?.status, e?.message);
-    res.status(200).json({ ...info, openaiError: e?.message || 'unknown' });
+    res.status(502).json({ ok: false, name: e.name, message: e.message });
   }
 });
 
-// ==== AUTH ====
-// Register
+// --- AUTH
 app.post('/api/register', (req, res) => {
   const { username = '', password = '' } = req.body || {};
   const u = String(username).trim();
@@ -140,7 +115,7 @@ app.post('/api/register', (req, res) => {
 
   try {
     const hash = bcrypt.hashSync(password, 10);
-    const info = db.prepare('INSERT INTO users (username, password_hash) VALUES (?,?)').run(u, hash);
+    const info = db.prepare('INSERT INTO users(username,password_hash) VALUES(?,?)').run(u, hash);
     req.session.user = { id: info.lastInsertRowid, username: u };
     res.json({ ok: true, id: info.lastInsertRowid });
   } catch (e) {
@@ -150,7 +125,6 @@ app.post('/api/register', (req, res) => {
   }
 });
 
-// Login
 app.post('/api/login', (req, res) => {
   const { username = '', password = '' } = req.body || {};
   const u = String(username).trim();
@@ -161,6 +135,7 @@ app.post('/api/login', (req, res) => {
     if (!row) return res.status(401).json({ error: 'Invalid credentials' });
     const ok = bcrypt.compareSync(password, row.password_hash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
     req.session.user = { id: row.id, username: row.username };
     res.json({ ok: true, user: { id: row.id, username: row.username } });
   } catch (e) {
@@ -169,24 +144,23 @@ app.post('/api/login', (req, res) => {
   }
 });
 
-// Logout & Me
 app.post('/api/logout', (req, res) => {
   req.session.destroy(() => {
     res.clearCookie('sid');
     res.json({ ok: true });
   });
 });
+
 app.get('/api/me', (req, res) => {
-  if (!isAuthed(req)) return res.json({ user: null });
-  res.json({ user: req.session.user });
+  res.json({ user: isAuthed(req) ? req.session.user : null });
 });
 
-// ==== FEEDBACK ====
+// --- Feedback
 app.post('/api/feedback', (req, res) => {
   const { name = '', email = '', message = '' } = req.body || {};
   if (!name || !email || !message) return res.status(400).json({ error: 'Missing fields' });
   try {
-    const info = db.prepare('INSERT INTO feedback (name,email,message) VALUES (?,?,?)').run(name, email, message);
+    const info = db.prepare('INSERT INTO feedback(name,email,message) VALUES(?,?,?)').run(name, email, message);
     res.json({ ok: true, id: info.lastInsertRowid });
   } catch (e) {
     console.error('Feedback error:', e);
@@ -194,60 +168,63 @@ app.post('/api/feedback', (req, res) => {
   }
 });
 
-// ==== OPENAI CHAT ====
+// --- OpenAI chat (Responses API, daha stabil)
 app.post('/api/chat', async (req, res) => {
+  const { message = '' } = req.body || {};
+  if (!message || typeof message !== 'string') return res.status(400).json({ error: 'Message required' });
+  if (!OPENAI_API_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
+
   try {
-    const { message = '' } = req.body || {};
-    if (!message || typeof message !== 'string') return res.status(400).json({ error: 'Message required' });
-    if (!OPENAI_API_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
-
     const client = new OpenAI({ apiKey: OPENAI_API_KEY });
-    const system = 'You are AquaLifeAI, a helpful aquarium assistant. Keep answers concise, safe, and accurate.';
 
-    const out = await client.chat.completions.create({
+    const r = await client.responses.create({
       model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: system },
-        { role: 'user', content: message },
+      input: [
+        { role: 'system', content: 'You are AquaLifeAI, a helpful aquarium assistant. Keep answers concise and safe.' },
+        { role: 'user', content: message }
       ],
       temperature: 0.4,
-      max_tokens: 400,
+      max_output_tokens: 400,
     });
 
-    const reply = out.choices?.[0]?.message?.content?.trim() || 'No reply';
+    const reply =
+      (r.output_text && r.output_text.trim()) ||
+      (r.output?.[0]?.content?.[0]?.text?.value?.trim()) ||
+      'No reply';
+
     res.json({ reply });
   } catch (e) {
-    // burada hatayı net gör
-    console.error('OpenAI chat error:', e?.status, e?.message);
-    if (e?.response?.data) console.error('OpenAI response data:', e.response.data);
-    res.status(e?.status || 502).json({ error: 'Connection error' });
+    // Ayrıntılı log: konsola tam hata dök, istemciye kısa mesaj ver
+    console.error('OpenAI error:', e?.status || e?.code, e?.message);
+    if (e?.response?.data) console.error('OpenAI data:', e.response.data);
+    res.status(502).json({ error: 'Connection error' });
   }
 });
 
-// ---- Legacy aliases (eski front-end için) ----
-function forwardTo(pathTarget) {
-  return (req, res) => {
-    return app._router.handle(
-      Object.assign(req, { url: pathTarget, originalUrl: pathTarget }),
-      res
-    );
-  };
-}
-app.post('/register', forwardTo('/api/register'));
-app.post('/login',    forwardTo('/api/login'));
-app.post('/chat',     forwardTo('/api/chat'));
+// --- Legacy aliaslar (eski HTML’ler için): /register, /login, /chat
+app.post('/register', (req, res) => {
+  const { username, email, password } = req.body || {};
+  req.body = { username: username || email || '', password: password || '' };
+  return app._router.handle(Object.assign(req, { url: '/api/register', originalUrl: '/api/register' }), res);
+});
+app.post('/login', (req, res) => {
+  const { username, email, password } = req.body || {};
+  req.body = { username: username || email || '', password: password || '' };
+  return app._router.handle(Object.assign(req, { url: '/api/login', originalUrl: '/api/login' }), res);
+});
+app.post('/chat', (req, res) => {
+  return app._router.handle(Object.assign(req, { url: '/api/chat', originalUrl: '/api/chat' }), res);
+});
 
-// ==== 404 + ERROR HANDLERS ====
+// 404 & error handler
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal error' });
 });
 
-// ==== START ====
-const server = app.listen(PORT, () => {
-  console.log(`AquaLifeAI running on http://localhost:${PORT}`);
-});
+// START
+const server = app.listen(PORT, () => console.log(`AquaLifeAI running on http://localhost:${PORT}`));
 
 // Graceful shutdown
 function shutdown(sig) {
@@ -260,4 +237,4 @@ function shutdown(sig) {
   };
 }
 process.on('SIGTERM', shutdown('SIGTERM'));
-process.on('SIGINT',  shutdown('SIGINT'));
+process.on('SIGINT', shutdown('SIGINT'));

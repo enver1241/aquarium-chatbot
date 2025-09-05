@@ -15,6 +15,20 @@
       <a href="register.html">Register</a>
     </nav>
   </header>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.querySelector('#email').value.trim();
+  const password = document.querySelector('#password').value;
+  const r = await fetch('/api/login', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ username: email, password })
+  });
+  const data = await r.json();
+  if (!r.ok) return alert(data.error || 'Login failed'); // 404 görmemelisin
+  location.href = '/profile.html';
+});
+</script>
 
   <main class="container">
     <form id="loginForm" class="auth">

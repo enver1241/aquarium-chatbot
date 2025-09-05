@@ -16,6 +16,14 @@ function bindAll(selector, handler) {
     })
   );
 }
+async function sendMessage(text){
+  const r = await fetch('/api/chat', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ message: text })
+  });
+  const data = await r.json();
+  addBot((r.ok && data.reply) ? data.reply : 'Error: ' + (data.error || r.statusText));
+}
 
 function safeBind(id, handler) {
   const el = document.getElementById(id);

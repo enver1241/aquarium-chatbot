@@ -6,13 +6,13 @@ const dns = require("dns");
 dns.setDefaultResultOrder("ipv4first"); 
 
 const express = require("express");
-const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const { OpenAI } = require("openai");
 const { Agent, setGlobalDispatcher, fetch } = require("undici");
 const Database = require("better-sqlite3");
 const db = new Database("./db.sqlite");
+
 
 
 setGlobalDispatcher(new Agent({

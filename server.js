@@ -6,17 +6,21 @@ const fs = require("fs");
 const express = require("express");
 const session = require("express-session");
 const SQLiteStore = require("connect-sqlite3")(session);
-const bcrypt = require("bcryptjs");               
+const bcrypt = require("bcryptjs");
 const sqlite3 = require("sqlite3").verbose();
 const multer = require("multer");
+
+// OpenAI CJS/ESM uyumlu import
 const _OpenAI = require("openai");
-const OpenAI = _OpenAI.OpenAI || _OpenAI;                
+const OpenAI = _OpenAI.OpenAI || _OpenAI;
 
 if (!process.env.OPENAI_API_KEY) {
   console.warn("[WARN] OPENAI_API_KEY not set. /chat will return 500.");
 }
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
@@ -39,15 +43,15 @@ app.use(
   })
 );
 
-// statik dosyalar
+// Statik dosyalar
 app.use(express.static(__dirname));
 
-// uploads
+// Uploads klasörü
 const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
 app.use("/uploads", express.static(uploadsDir));
 
-// health
+// Sağlık
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
 /* ---------------- DB ---------------- */
@@ -108,7 +112,7 @@ app.post("/register", async (req, res) => {
         res.json({ ok: true });
       }
     );
-  } catch (e) {
+  } catch {
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -150,7 +154,7 @@ app.put("/profile", requireAuth, (req, res) => {
   });
 });
 
-// avatar
+// Avatar upload (multer fix)
 const storage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, uploadsDir),
   filename: (_, file, cb) => cb(null, "avatar_" + Date.now() + path.extname(file.originalname).toLowerCase()),
@@ -158,7 +162,11 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 },
-  fileFilter: (_, file, cb) => cb(/image\/(png|jpe?g|webp)/i.test(file.mimetype) ? null : new Error("Only images allowed"), /image\/(png|jpe?g|webp)/i.test(file.mimetype)),
+  fileFilter: (_, file, cb) => {
+    const ok = /image\/(png|jpe?g|webp)/i.test(file.mimetype);
+    if (ok) cb(null, true);
+    else cb(new Error("Only images allowed"));
+  },
 }).single("avatar");
 
 app.post("/profile/avatar", requireAuth, (req, res) => {
@@ -182,6 +190,33 @@ app.post("/feedback", requireAuth, (req, res) => {
   });
 });
 
+/* ----------- Teşhis (env & OpenAI) ----------- */
+app.get("/diag", (req, res) => {
+  const key = process.env.OPENAI_API_KEY || "";
+  res.json({
+    ok: true,
+    node: process.version,
+    hasKey: Boolean(key),
+    keyPrefix: key ? key.slice(0, 6) : null,
+    env: process.env.RENDER ? "render" : (process.env.NODE_ENV || "local"),
+    loggedIn: Boolean(req.session?.userId),
+  });
+});
+
+app.get("/probe-openai", async (_req, res) => {
+  try {
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const r = await client.responses.create({
+      model: "gpt-4o-mini",
+      input: "Say only: pong" // min token kısıtı yok; alanı kaldırdık
+    });
+    res.json({ ok: true, text: String(r.output_text || "").trim() });
+  } catch (e) {
+    console.error("probe-openai:", e?.message || e);
+    res.status(502).json({ ok: false, error: e?.response?.data || e?.message || String(e) });
+  }
+});
+
 /* --------------- Chatbot --------------- */
 app.get("/Chatbot.html", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "Chatbot.html"));
@@ -190,23 +225,29 @@ app.get("/Chatbot.html", requireAuth, (req, res) => {
 app.post("/chat", requireAuth, async (req, res) => {
   try {
     const { message } = req.body || {};
-    if (!message) return res.status(400).json({ error: "Missing message" });
+    if (!message?.trim()) return res.status(400).json({ error: "Missing message" });
     if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: "Missing OPENAI_API_KEY" });
 
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const out = await client.chat.completions.create({
+
+    const r = await client.responses.create({
       model: "gpt-4o-mini",
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: "You are an aquarium assistant for hobbyists. Keep answers concise and practical." },
-        { role: "user", content: message },
+      input: [
+        { role: "system", content: "You are AquaLifeAI, an aquarium assistant for hobbyists. Keep answers concise and practical. Reply multilingual when asked." },
+        { role: "user", content: message }
       ],
+      temperature: 0.3,
+      max_output_tokens: 600
     });
 
-    const reply = out?.choices?.[0]?.message?.content?.trim() || "I couldn't generate a reply.";
+    const reply =
+      (r.output_text && String(r.output_text).trim()) ||
+      (r.choices?.[0]?.message?.content?.trim()) ||
+      "I couldn't generate a reply.";
+
     res.json({ reply });
   } catch (e) {
-    console.error("Chat error:", e?.response?.data || e);
+    console.error("Chat error:", e?.response?.data || e?.message || e);
     res.status(500).json({ error: "Connection error." });
   }
 });
@@ -215,5 +256,4 @@ app.post("/chat", requireAuth, async (req, res) => {
 app.get("/", (_req, res) => res.sendFile(path.join(__dirname, "index.html")));
 app.use((req, res) => res.status(404).send("Not Found"));
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server on http://localhost:${PORT}`));

@@ -13,7 +13,7 @@ const session = require('express-session');
 const BetterSqlite3Store = require('better-sqlite3-session-store')(session);
 const OpenAI = require('openai');
 
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 10000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev_secret';
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'db.sqlite');
 const SESSIONS_DB = process.env.SESSIONS_DB || path.join(__dirname, 'sessions.sqlite');
@@ -190,8 +190,12 @@ app.post('/api/chat', async (req, res) => {
     const reply = completion.choices[0]?.message?.content?.trim() || 'No reply';
     res.json({ reply });
   } catch (e) {
-    console.error('OpenAI error:', e?.status || e?.code, e?.message);
-    if (e?.response?.data) console.error('OpenAI data:', e.response.data);
+    console.error('OpenAI error details:');
+    console.error('- Status:', e?.status);
+    console.error('- Code:', e?.code);
+    console.error('- Message:', e?.message);
+    console.error('- Error object:', JSON.stringify(e, null, 2));
+    if (e?.response?.data) console.error('- Response data:', JSON.stringify(e.response.data, null, 2));
     res.status(502).json({ error: 'Connection error' });
   }
 });

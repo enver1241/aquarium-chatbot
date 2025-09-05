@@ -222,7 +222,7 @@ app.get("/Chatbot.html", requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, "Chatbot.html"));
 });
 
-app.post("/chat", requireAuth, async (req, res) => {
+app.post("/chat", async (req, res) => {
   try {
     const { message } = req.body || {};
     if (!message?.trim()) return res.status(400).json({ error: "Missing message" });

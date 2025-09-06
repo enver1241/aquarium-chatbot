@@ -9,10 +9,15 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><a href="index.html" class="logo">🐠</a> <strong>Register</strong></div>
-    <nav class="nav-links">
+    <a href="index.html" class="brand" aria-label="AquaLifeAi Home">
+      <img src="aqualifeai.png" class="brand-logo" alt="AquaLifeAI Logo" />
+    </a>
+    
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navMenu">🐟</button>
+    
+    <nav id="navMenu" class="nav-links" role="navigation">
       <a href="index.html">Home</a>
-      <a href="login.html">Login</a>
+      <a href="login.html" class="btn btn-outline">Login</a>
     </nav>
   </header>
 <script>
@@ -45,12 +50,15 @@ document.querySelector('form').addEventListener('submit', registerSubmit);
 
   <main class="container">
     <form id="registerForm" class="auth">
-      <h2>Create account</h2>
-      <input id="display_name" name="display_name" type="text" placeholder="Display name (optional)" />
-      <input id="email" name="email" type="email" placeholder="Email" required />
-      <input id="password" name="password" type="password" placeholder="Password" required />
-      <button type="submit">Sign up</button>
-      <p>Already have an account? <a href="login.html">Login</a></p>
+      <h2>🎆 Create account</h2>
+      <label for="display_name">Display Name (Optional)</label>
+      <input id="display_name" name="display_name" type="text" placeholder="Enter your display name" />
+      <label for="email">Email Address</label>
+      <input id="email" name="email" type="email" placeholder="Enter your email" required />
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" placeholder="Create a password" required />
+      <button type="submit">Create Account</button>
+      <p style="text-align:center;margin-top:20px;color:#666;">Already have an account? <a href="login.html" style="color:var(--brand);font-weight:600;">Login here</a></p>
     </form>
   </main>
 </body>

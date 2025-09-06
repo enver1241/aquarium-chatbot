@@ -174,10 +174,10 @@
             setTimeout(() => {
               console.log('Executing redirect now...');
               try {
-                window.location.href = './thanks.html';
+                window.location.href = '/thanks.html';
               } catch (e) {
                 console.error('Redirect error:', e);
-                window.location.replace('./thanks.html');
+                window.location.replace('/thanks.html');
               }
             }, 1500);
           } else {
@@ -210,7 +210,7 @@
       testBtn.style.background = '#28a745';
       testBtn.onclick = function() {
         console.log('Testing redirect...');
-        window.location.href = './thanks.html';
+        window.location.href = '/thanks.html';
       };
       document.querySelector('.wrap').appendChild(testBtn);
     });

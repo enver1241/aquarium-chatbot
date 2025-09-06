@@ -23,7 +23,22 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security + parsers
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(helmet({ 
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"]
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -47,6 +62,11 @@ app.use((req, _res, next) => {
 // Static + index
 app.use(express.static(__dirname, { extensions: ['html'] }));
 app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+// Explicit route for thanks.html to ensure it's served properly
+app.get('/thanks.html', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'thanks.html'));
+});
 
 // --- Helpers
 function ensureFile(filePath) {
@@ -181,6 +201,17 @@ app.put('/api/profile', (req, res) => {
   } catch (e) {
     console.error('Profile update error:', e);
     res.status(500).json({ error: 'Update failed' });
+  }
+});
+
+// --- Admin routes
+app.get('/admin/feedback', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM feedback ORDER BY created_at DESC').all();
+    res.json(rows);
+  } catch (e) {
+    console.error('Admin feedback fetch error:', e);
+    res.status(500).json({ error: 'Failed to fetch feedback' });
   }
 });
 

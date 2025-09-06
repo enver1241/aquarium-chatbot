@@ -1,9 +1,0 @@
-FEEDBACK #4
-Date: 9/6/2025, 3:36:27 AM
-Name: John Doe
-Email: john@example.com
-Message:
-Testing the complete feedback flow with automatic txt file generation. This should create a new feedback file in the background.
-
----
-Saved to database with ID: 4

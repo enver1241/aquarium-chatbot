@@ -124,11 +124,11 @@
       if (j.ok) {
         // Clear form
         form.reset();
-        // Show success message briefly before redirect
-        msg.textContent = "✅ Feedback sent! Redirecting...";
+        // Show thank you message from server response
+        msg.textContent = "✅ " + (j.message || "Thank you for your feedback!");
         setTimeout(() => {
           window.location.href = "thanks.html";
-        }, 1000);
+        }, 2000);
       } else {
         msg.classList.add("error");
         msg.textContent = "❌ " + (j.error || "Feedback failed");

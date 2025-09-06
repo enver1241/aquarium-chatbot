@@ -188,12 +188,49 @@ app.put('/api/profile', (req, res) => {
 app.post('/api/feedback', (req, res) => {
   const { name = '', email = '', message = '' } = req.body || {};
   if (!name || !email || !message) return res.status(400).json({ error: 'Missing fields' });
+  
   try {
+    // Save to database
     const info = db.prepare('INSERT INTO feedback(name,email,message) VALUES(?,?,?)').run(name, email, message);
-    res.json({ ok: true, id: info.lastInsertRowid });
+    
+    // Save to text file
+    const feedbackDir = path.join(__dirname, 'feedback_files');
+    
+    // Create feedback directory if it doesn't exist
+    if (!fs.existsSync(feedbackDir)) {
+      fs.mkdirSync(feedbackDir, { recursive: true });
+    }
+    
+    // Create filename with timestamp and ID
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `feedback_${info.lastInsertRowid}_${timestamp}.txt`;
+    const filepath = path.join(feedbackDir, filename);
+    
+    // Format feedback content
+    const feedbackContent = `FEEDBACK #${info.lastInsertRowid}
+Date: ${new Date().toLocaleString()}
+Name: ${name}
+Email: ${email}
+Message:
+${message}
+
+---
+Saved to database with ID: ${info.lastInsertRowid}
+`;
+    
+    // Write to file
+    fs.writeFileSync(filepath, feedbackContent, 'utf8');
+    
+    console.log(`Feedback saved: Database ID ${info.lastInsertRowid}, File: ${filename}`);
+    
+    res.json({ 
+      ok: true, 
+      id: info.lastInsertRowid,
+      message: 'Thank you for your feedback! Your message has been saved and we will review it soon.'
+    });
   } catch (e) {
     console.error('Feedback error:', e);
-    res.status(500).json({ error: 'DB error' });
+    res.status(500).json({ error: 'Failed to save feedback' });
   }
 });
 

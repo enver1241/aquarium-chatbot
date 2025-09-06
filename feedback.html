@@ -109,20 +109,34 @@
       const r = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload)
       });
+      
+      if (!r.ok) {
+        const errorData = await r.json().catch(() => ({}));
+        msg.classList.add("error");
+        msg.textContent = "❌ " + (errorData.error || "Feedback failed");
+        return;
+      }
+      
       const j = await r.json();
       if (j.ok) {
-        // ✅ Başarılı → teşekkür sayfasına yönlendir
-        window.location.href = "thanks.html";
+        // Clear form
+        form.reset();
+        // Show success message briefly before redirect
+        msg.textContent = "✅ Feedback sent! Redirecting...";
+        setTimeout(() => {
+          window.location.href = "thanks.html";
+        }, 1000);
       } else {
         msg.classList.add("error");
         msg.textContent = "❌ " + (j.error || "Feedback failed");
       }
     } catch (err) {
       msg.classList.add("error");
-      msg.textContent = "❌ " + err.message;
-      console.error(err);
+      msg.textContent = "❌ Network error: " + err.message;
+      console.error("Feedback error:", err);
     }
 
     return false; // formun default submitini kapat

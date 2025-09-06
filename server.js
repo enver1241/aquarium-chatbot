@@ -204,10 +204,16 @@ app.post('/api/chat', async (req, res) => {
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
 
   try {
+    // Add explicit API key validation
+    if (!OPENAI_API_KEY || OPENAI_API_KEY.trim() === '' || OPENAI_API_KEY === 'sk-proj-your-openai-api-key-here') {
+      throw new Error('OpenAI API key not properly configured');
+    }
+
     const client = new OpenAI({ 
       apiKey: OPENAI_API_KEY,
-      timeout: 30000, // 30 second timeout
-      maxRetries: 2
+      timeout: 60000, // Increase to 60 seconds for production
+      maxRetries: 3,
+      dangerouslyAllowBrowser: false
     });
 
     const completion = await client.chat.completions.create({
@@ -229,17 +235,22 @@ app.post('/api/chat', async (req, res) => {
     console.error('- Message:', e?.message);
     console.error('- Type:', e?.type);
     console.error('- Name:', e?.name);
+    console.error('- Full error:', e);
     if (e?.response?.data) console.error('- Response data:', JSON.stringify(e.response.data, null, 2));
     
-    // Handle specific error types
-    if (e?.code === 'ECONNRESET' || e?.code === 'ETIMEDOUT' || e?.name === 'ConnectTimeoutError') {
+    // More robust error handling
+    if (!OPENAI_API_KEY || OPENAI_API_KEY.trim() === '') {
+      res.status(500).json({ error: 'OpenAI API key not configured' });
+    } else if (e?.code === 'ECONNRESET' || e?.code === 'ETIMEDOUT' || e?.name === 'ConnectTimeoutError' || e?.code === 'ENOTFOUND') {
       res.status(503).json({ error: 'Service temporarily unavailable. Please try again.' });
     } else if (e?.status === 429) {
       res.status(429).json({ error: 'Rate limit exceeded. Please wait a moment.' });
-    } else if (e?.status === 401) {
-      res.status(500).json({ error: 'API configuration error' });
+    } else if (e?.status === 401 || e?.status === 403) {
+      res.status(500).json({ error: 'API authentication failed' });
+    } else if (e?.message?.includes('fetch')) {
+      res.status(503).json({ error: 'Network connection failed. Please try again.' });
     } else {
-      res.status(502).json({ error: 'Connection error' });
+      res.status(502).json({ error: 'AI service unavailable' });
     }
   }
 });

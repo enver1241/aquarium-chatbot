@@ -282,43 +282,68 @@ function wireAuthForms() {
 function wireProfilePage() {
   if (!/profile\.html$/i.test(location.pathname)) return;
 
-  // yükle
+  // Load profile data
   fetch("/api/profile", { credentials: "include" })
     .then((r) => {
-      if (r.status === 401) location.href = "login.html?next=profile.html";
+      if (r.status === 401) {
+        location.href = "login.html?next=profile.html";
+        return;
+      }
       return r.json();
     })
     .then((u) => {
       if (!u) return;
       const nameInput = document.querySelector('input[name="display_name"]');
-      if (nameInput) nameInput.value = u.display_name || "";
+      if (nameInput) nameInput.value = u.display_name || u.username || "";
       const img = $("#avatarImg");
       if (img) img.src = u.avatar_url || "/uploads/default-avatar.png";
+    })
+    .catch((e) => {
+      console.error("Profile load error:", e);
     });
 
-  // isim kaydet
+  // Save display name
   const nameForm = $("#nameForm");
   if (nameForm) {
     nameForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const display_name = nameForm.querySelector('input[name="display_name"]').value.trim();
-      const res = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ display_name }),
-      });
-      if (!res.ok) return alert("Save error");
-      alert("Saved");
+      
+      if (!display_name) {
+        alert("Please enter a display name");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ display_name }),
+        });
+        
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || "Save error");
+          return;
+        }
+        
+        alert("Display name saved successfully!");
+        // Update navbar if needed
+        hydrateNavbar();
+      } catch (e) {
+        console.error("Save error:", e);
+        alert("Network error. Please try again.");
+      }
     });
   }
 
-  // avatar yükle - simplified for now
+  // Avatar upload - placeholder
   const avatarForm = $("#avatarForm");
   if (avatarForm) {
     avatarForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      alert("Avatar upload feature coming soon!");
+      alert("Avatar upload feature will be available soon!");
     });
   }
 }

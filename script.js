@@ -116,16 +116,23 @@ function setupResponsiveNavbar() {
     btn.setAttribute("aria-expanded", "true");
   };
 
-  btn.addEventListener("click", () => {
+  // Prevent iOS double-tap issues
+  btn.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+  }, { passive: false });
+
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     menu.classList.contains("open") ? closeMenu() : openMenu();
   });
 
-  // Linke basınca kapan
+  // Close menu when clicking links
   menu.addEventListener("click", (e) => {
     if (e.target.closest("a")) closeMenu();
   });
 
-  // Esc ile kapan
+  // Close with Escape key
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeMenu();
   });

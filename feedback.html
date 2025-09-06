@@ -149,6 +149,8 @@
         showMessage('Sending your feedback...', 'loading');
 
         try {
+          console.log('Submitting feedback:', { name, email, message });
+          
           const response = await fetch('/api/feedback', {
             method: 'POST',
             headers: {
@@ -158,19 +160,24 @@
             body: JSON.stringify({ name, email, message })
           });
 
+          console.log('Response status:', response.status);
           const result = await response.json();
+          console.log('Response data:', result);
 
           if (response.ok && result.ok) {
             // Success
             form.reset();
             showMessage(result.message || 'Thank you for your feedback!', 'success');
             
-            // Redirect after 3 seconds
+            console.log('Redirecting to thanks.html in 2 seconds...');
+            // Redirect after 2 seconds
             setTimeout(() => {
+              console.log('Executing redirect now...');
               window.location.href = 'thanks.html';
-            }, 3000);
+            }, 2000);
           } else {
             // Error from server
+            console.error('Server error:', result);
             showMessage(result.error || 'Failed to send feedback. Please try again.', 'error');
           }
         } catch (error) {

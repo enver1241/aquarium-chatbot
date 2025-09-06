@@ -167,14 +167,19 @@
           if (response.ok && result.ok) {
             // Success
             form.reset();
-            showMessage(result.message || 'Thank you for your feedback!', 'success');
+            showMessage('✅ ' + (result.message || 'Thank you for your feedback!') + ' Redirecting...', 'success');
             
-            console.log('Redirecting to thanks.html in 2 seconds...');
-            // Redirect after 2 seconds
+            console.log('Redirecting to thanks.html in 1.5 seconds...');
+            // Immediate redirect after showing success message
             setTimeout(() => {
               console.log('Executing redirect now...');
-              window.location.href = 'thanks.html';
-            }, 2000);
+              try {
+                window.location.href = './thanks.html';
+              } catch (e) {
+                console.error('Redirect error:', e);
+                window.location.replace('./thanks.html');
+              }
+            }, 1500);
           } else {
             // Error from server
             console.error('Server error:', result);
@@ -193,7 +198,21 @@
       function showMessage(text, type) {
         msg.textContent = text;
         msg.className = `msg ${type}`;
+        
+        // Force scroll to message for visibility
+        msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+      
+      // Add test button for debugging
+      const testBtn = document.createElement('button');
+      testBtn.textContent = 'Test Redirect';
+      testBtn.style.marginTop = '10px';
+      testBtn.style.background = '#28a745';
+      testBtn.onclick = function() {
+        console.log('Testing redirect...');
+        window.location.href = './thanks.html';
+      };
+      document.querySelector('.wrap').appendChild(testBtn);
     });
   </script>
 </body>

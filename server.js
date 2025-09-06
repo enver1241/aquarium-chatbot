@@ -407,6 +407,28 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// --- Admin endpoints
+app.get('/admin/feedback', (req, res) => {
+  try {
+    const feedbacks = db.prepare('SELECT * FROM feedback ORDER BY created_at DESC').all();
+    res.json(feedbacks);
+  } catch (e) {
+    console.error('Admin feedback fetch error:', e);
+    res.status(500).json({ error: 'Failed to fetch feedback' });
+  }
+});
+
+app.post('/admin-login', (req, res) => {
+  const { password } = req.body || {};
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  
+  if (password === adminPassword) {
+    res.json({ ok: true });
+  } else {
+    res.status(401).json({ error: 'Invalid password' });
+  }
+});
+
 // --- Legacy aliaslar (eski HTML'ler için): /register, /login, /chat, /feedback
 app.post('/register', (req, res) => {
   const { username, email, password } = req.body || {};

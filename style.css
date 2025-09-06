@@ -370,6 +370,9 @@ a.brand{
   padding:8px;
   border-radius:8px;
   transition:all 0.3s ease;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
 }
 
 .nav-toggle:hover{

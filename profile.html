@@ -9,8 +9,14 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><a href="index.html" class="logo">🐟</a> <strong>My Profile</strong></div>
-    <nav class="nav-links">
+    <a href="index.html" class="brand" aria-label="AquaLifeAI Home">
+      <img src="aqualifeai.png" alt="AquaLifeAI Logo" class="brand-logo" />
+      <strong>My Profile</strong>
+    </a>
+
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navMenu">🐟</button>
+
+    <nav id="navMenu" class="nav-links" role="navigation">
       <a href="index.html">Home</a>
       <a href="Chatbot.html">Chatbot</a>
       <a href="profile.html" style="background:#eef2ff">Profile</a>

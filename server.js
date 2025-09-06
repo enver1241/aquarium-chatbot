@@ -64,6 +64,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    display_name TEXT,
+    avatar_url TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
   CREATE TABLE IF NOT EXISTS feedback(
@@ -155,6 +157,33 @@ app.get('/api/me', (req, res) => {
   res.json({ user: isAuthed(req) ? req.session.user : null });
 });
 
+// --- Profile
+app.get('/api/profile', (req, res) => {
+  if (!isAuthed(req)) return res.status(401).json({ error: 'Not authenticated' });
+  const user = req.session.user;
+  res.json({
+    id: user.id,
+    username: user.username,
+    display_name: user.display_name || user.username,
+    avatar_url: user.avatar_url || '/uploads/default-avatar.png'
+  });
+});
+
+app.put('/api/profile', (req, res) => {
+  if (!isAuthed(req)) return res.status(401).json({ error: 'Not authenticated' });
+  const { display_name = '' } = req.body || {};
+  const userId = req.session.user.id;
+  
+  try {
+    db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(display_name, userId);
+    req.session.user.display_name = display_name;
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Profile update error:', e);
+    res.status(500).json({ error: 'Update failed' });
+  }
+});
+
 // --- Feedback
 app.post('/api/feedback', (req, res) => {
   const { name = '', email = '', message = '' } = req.body || {};
@@ -215,7 +244,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// --- Legacy aliaslar (eski HTML’ler için): /register, /login, /chat
+// --- Legacy aliaslar (eski HTML'ler için): /register, /login, /chat, /feedback
 app.post('/register', (req, res) => {
   const { username, email, password } = req.body || {};
   req.body = { username: username || email || '', password: password || '' };
@@ -228,6 +257,15 @@ app.post('/login', (req, res) => {
 });
 app.post('/chat', (req, res) => {
   return app._router.handle(Object.assign(req, { url: '/api/chat', originalUrl: '/api/chat' }), res);
+});
+app.post('/feedback', (req, res) => {
+  return app._router.handle(Object.assign(req, { url: '/api/feedback', originalUrl: '/api/feedback' }), res);
+});
+app.get('/profile', (req, res) => {
+  return app._router.handle(Object.assign(req, { url: '/api/profile', originalUrl: '/api/profile' }), res);
+});
+app.put('/profile', (req, res) => {
+  return app._router.handle(Object.assign(req, { url: '/api/profile', originalUrl: '/api/profile' }), res);
 });
 
 // 404 & error handler

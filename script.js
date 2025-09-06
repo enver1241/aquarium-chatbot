@@ -283,7 +283,7 @@ function wireProfilePage() {
   if (!/profile\.html$/i.test(location.pathname)) return;
 
   // yükle
-  fetch("/profile")
+  fetch("/api/profile", { credentials: "include" })
     .then((r) => {
       if (r.status === 401) location.href = "login.html?next=profile.html";
       return r.json();
@@ -302,9 +302,10 @@ function wireProfilePage() {
     nameForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const display_name = nameForm.querySelector('input[name="display_name"]').value.trim();
-      const res = await fetch("/profile", {
+      const res = await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ display_name }),
       });
       if (!res.ok) return alert("Save error");
@@ -312,18 +313,12 @@ function wireProfilePage() {
     });
   }
 
-  // avatar yükle
+  // avatar yükle - simplified for now
   const avatarForm = $("#avatarForm");
   if (avatarForm) {
     avatarForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const fd = new FormData(avatarForm);
-      const res = await fetch("/profile/avatar", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) return alert(data.error || "Upload error");
-      const img = $("#avatarImg");
-      if (img) img.src = data.avatar_url;
-      alert("Avatar updated!");
+      alert("Avatar upload feature coming soon!");
     });
   }
 }

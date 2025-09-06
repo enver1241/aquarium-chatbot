@@ -300,27 +300,44 @@
         try {
           console.log('Submitting feedback:', { name, email, message });
           
+          // Use form data instead of JSON for better server compatibility
+          const formData = new FormData();
+          formData.append('name', name);
+          formData.append('email', email);
+          formData.append('message', message);
+          
           const response = await fetch('/api/feedback', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name, email, message })
+            body: formData
           });
 
           console.log('Response status:', response.status);
           
-          const result = await response.json();
+          // Check if response is a redirect (thanks.html)
+          if (response.redirected || response.url.includes('thanks.html')) {
+            console.log('Redirected to:', response.url);
+            window.location.href = 'thanks.html';
+            return;
+          }
+          
+          // Try to parse JSON response
+          let result;
+          try {
+            result = await response.json();
+          } catch (e) {
+            // If not JSON, assume success if status is ok
+            if (response.ok) {
+              window.location.href = 'thanks.html';
+              return;
+            }
+            throw new Error('Invalid response format');
+          }
+          
           console.log('Response data:', result);
 
-          if (result.ok) {
-            // Success - show message and redirect immediately
+          if (response.ok && (result.ok || result.success)) {
             showMessage('✅ Thank you! Your feedback has been saved. Redirecting...', 'success');
-            
-            // Reset form
             form.reset();
-            
-            // Redirect after short delay
             setTimeout(() => {
               window.location.href = 'thanks.html';
             }, 1000);
@@ -345,20 +362,6 @@
         msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       
-      // Add test button for debugging (only in development)
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        const testBtn = document.createElement('button');
-        testBtn.textContent = 'Test Redirect';
-        testBtn.style.marginTop = '16px';
-        testBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-        testBtn.style.fontSize = '14px';
-        testBtn.style.padding = '8px 16px';
-        testBtn.onclick = function() {
-          console.log('Testing redirect...');
-          window.location.href = 'thanks.html';
-        };
-        document.querySelector('.wrap').appendChild(testBtn);
-      }
     });
   </script>
 </body>

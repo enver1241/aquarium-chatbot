@@ -27,6 +27,17 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '1mb' }));
 
+// Ensure feedback table exists
+db.exec(`
+  CREATE TABLE IF NOT EXISTS feedback(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
 // CORS
 app.use(cors({
   origin: ['http://localhost:3000', 'https://aquarium-chatbot.onrender.com', 'https://aqualifeai.com'],
@@ -193,10 +204,7 @@ app.post('/api/feedback', (req, res) => {
   // Validate required fields
   if (!name?.trim() || !email?.trim() || !message?.trim()) {
     console.log('Validation failed - missing fields');
-    return res.status(400).json({ 
-      ok: false, 
-      error: 'All fields (name, email, message) are required' 
-    });
+    return res.status(400).send('Missing required fields.');
   }
   
   try {
@@ -221,22 +229,13 @@ app.post('/api/feedback', (req, res) => {
     
     // Create filename with timestamp and ID
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `feedback_${info.lastInsertRowid}_${timestamp}.txt`;
+    const safeEmail = String(email).toLowerCase().replace(/[^a-z0-9]+/g,'_');
+    const filename = `${Date.now()}_${safeEmail}.txt`;
     const filepath = path.join(feedbackDir, filename);
     console.log('Creating file:', filepath);
     
     // Format feedback content
-    const feedbackContent = `FEEDBACK #${info.lastInsertRowid}
-Date: ${new Date().toLocaleString()}
-Name: ${name.trim()}
-Email: ${email.trim()}
-Message:
-${message.trim()}
-
----
-Saved to database with ID: ${info.lastInsertRowid}
-Timestamp: ${new Date().toISOString()}
-`;
+    const feedbackContent = `Name: ${name.trim()}\nEmail: ${email.trim()}\n\n${message.trim()}\n`;
     
     // Write to file
     fs.writeFileSync(filepath, feedbackContent, 'utf8');
@@ -251,18 +250,11 @@ Timestamp: ${new Date().toISOString()}
     
     console.log(`✅ Feedback saved successfully: Database ID ${info.lastInsertRowid}, File: ${filename}`);
     
-    res.json({ 
-      ok: true, 
-      id: info.lastInsertRowid,
-      message: 'Thank you for your feedback! Your message has been saved and we will review it soon.',
-      filename: filename
-    });
+    // Important: Use 303 redirect to prevent form resubmission
+    return res.redirect(303, '/thanks.html');
   } catch (e) {
     console.error('❌ Feedback save error:', e);
-    res.status(500).json({ 
-      ok: false, 
-      error: 'Failed to save feedback. Please try again.' 
-    });
+    return res.status(500).send('Internal error saving feedback.');
   }
 });
 

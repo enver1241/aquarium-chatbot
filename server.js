@@ -186,18 +186,36 @@ app.put('/api/profile', (req, res) => {
 
 // --- Feedback
 app.post('/api/feedback', (req, res) => {
+  console.log('Feedback endpoint called with:', req.body);
+  
   const { name = '', email = '', message = '' } = req.body || {};
-  if (!name || !email || !message) return res.status(400).json({ error: 'Missing fields' });
+  
+  // Validate required fields
+  if (!name?.trim() || !email?.trim() || !message?.trim()) {
+    console.log('Validation failed - missing fields');
+    return res.status(400).json({ 
+      ok: false, 
+      error: 'All fields (name, email, message) are required' 
+    });
+  }
   
   try {
     // Save to database
-    const info = db.prepare('INSERT INTO feedback(name,email,message) VALUES(?,?,?)').run(name, email, message);
+    console.log('Saving to database...');
+    const info = db.prepare('INSERT INTO feedback(name,email,message) VALUES(?,?,?)').run(
+      name.trim(), 
+      email.trim(), 
+      message.trim()
+    );
+    console.log('Database save successful, ID:', info.lastInsertRowid);
     
     // Save to text file
     const feedbackDir = path.join(__dirname, 'feedback_files');
+    console.log('Feedback directory:', feedbackDir);
     
     // Create feedback directory if it doesn't exist
     if (!fs.existsSync(feedbackDir)) {
+      console.log('Creating feedback directory...');
       fs.mkdirSync(feedbackDir, { recursive: true });
     }
     
@@ -205,32 +223,46 @@ app.post('/api/feedback', (req, res) => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `feedback_${info.lastInsertRowid}_${timestamp}.txt`;
     const filepath = path.join(feedbackDir, filename);
+    console.log('Creating file:', filepath);
     
     // Format feedback content
     const feedbackContent = `FEEDBACK #${info.lastInsertRowid}
 Date: ${new Date().toLocaleString()}
-Name: ${name}
-Email: ${email}
+Name: ${name.trim()}
+Email: ${email.trim()}
 Message:
-${message}
+${message.trim()}
 
 ---
 Saved to database with ID: ${info.lastInsertRowid}
+Timestamp: ${new Date().toISOString()}
 `;
     
     // Write to file
     fs.writeFileSync(filepath, feedbackContent, 'utf8');
+    console.log('File saved successfully:', filename);
     
-    console.log(`Feedback saved: Database ID ${info.lastInsertRowid}, File: ${filename}`);
+    // Verify file was created
+    if (fs.existsSync(filepath)) {
+      console.log('File verification successful');
+    } else {
+      console.error('File verification failed - file does not exist');
+    }
+    
+    console.log(`✅ Feedback saved successfully: Database ID ${info.lastInsertRowid}, File: ${filename}`);
     
     res.json({ 
       ok: true, 
       id: info.lastInsertRowid,
-      message: 'Thank you for your feedback! Your message has been saved and we will review it soon.'
+      message: 'Thank you for your feedback! Your message has been saved and we will review it soon.',
+      filename: filename
     });
   } catch (e) {
-    console.error('Feedback error:', e);
-    res.status(500).json({ error: 'Failed to save feedback' });
+    console.error('❌ Feedback save error:', e);
+    res.status(500).json({ 
+      ok: false, 
+      error: 'Failed to save feedback. Please try again.' 
+    });
   }
 });
 

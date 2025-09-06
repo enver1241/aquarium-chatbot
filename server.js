@@ -204,14 +204,26 @@ app.post('/api/chat', async (req, res) => {
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
 
   try {
-    // Add explicit API key validation
-    if (!OPENAI_API_KEY || OPENAI_API_KEY.trim() === '' || OPENAI_API_KEY === 'sk-proj-your-openai-api-key-here') {
+    // Clean and validate API key
+    const cleanApiKey = OPENAI_API_KEY ? OPENAI_API_KEY.trim().replace(/\s+/g, '') : '';
+    
+    if (!cleanApiKey || cleanApiKey === '' || cleanApiKey === 'sk-proj-your-openai-api-key-here') {
       throw new Error('OpenAI API key not properly configured');
     }
 
+    // Validate API key format
+    if (!cleanApiKey.startsWith('sk-') || cleanApiKey.length < 20) {
+      throw new Error('Invalid OpenAI API key format');
+    }
+
+    // Check for invalid characters that would cause HTTP header issues
+    if (!/^[a-zA-Z0-9\-_]+$/.test(cleanApiKey)) {
+      throw new Error('OpenAI API key contains invalid characters');
+    }
+
     const client = new OpenAI({ 
-      apiKey: OPENAI_API_KEY,
-      timeout: 60000, // Increase to 60 seconds for production
+      apiKey: cleanApiKey,
+      timeout: 60000,
       maxRetries: 3,
       dangerouslyAllowBrowser: false
     });
@@ -241,6 +253,10 @@ app.post('/api/chat', async (req, res) => {
     // More robust error handling
     if (!OPENAI_API_KEY || OPENAI_API_KEY.trim() === '') {
       res.status(500).json({ error: 'OpenAI API key not configured' });
+    } else if (e?.message?.includes('invalid characters') || e?.message?.includes('not a legal HTTP header value')) {
+      res.status(500).json({ error: 'Invalid API key format. Please check your OpenAI API key in environment variables.' });
+    } else if (e?.message?.includes('Invalid OpenAI API key format')) {
+      res.status(500).json({ error: 'Invalid API key format. Please verify your OpenAI API key.' });
     } else if (e?.code === 'ECONNRESET' || e?.code === 'ETIMEDOUT' || e?.name === 'ConnectTimeoutError' || e?.code === 'ENOTFOUND') {
       res.status(503).json({ error: 'Service temporarily unavailable. Please try again.' });
     } else if (e?.status === 429) {

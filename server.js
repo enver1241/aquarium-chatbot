@@ -25,7 +25,19 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security + parsers
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(helmet({ 
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: ["'self'"]
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -49,6 +61,7 @@ app.use((req, _res, next) => {
 // Static + index
 app.use(express.static(__dirname, { extensions: ['html'] }));
 app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get('/thanks.html', (_req, res) => res.sendFile(path.join(__dirname, 'thanks.html')));
 
 // --- Helpers
 function ensureFile(filePath) {

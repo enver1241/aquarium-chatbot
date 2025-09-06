@@ -9,8 +9,16 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><a href="index.html" class="logo">🐟</a> <strong>My Profile</strong></div>
-    <nav class="nav-links">
+    <div class="brand">
+      <img src="aqualifeai.png" alt="AquaLifeAI Logo" class="brand-logo" />
+      <strong>My Profile</strong>
+    </div>
+
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navMenu">
+      <img src="aqualifeai.png" alt="Menu" class="nav-toggle-logo" />
+    </button>
+
+    <nav id="navMenu" class="nav-links" role="navigation">
       <a href="index.html">Home</a>
       <a href="Chatbot.html">Chatbot</a>
       <a href="profile.html" style="background:#eef2ff">Profile</a>
@@ -29,7 +37,7 @@
 
       <form id="avatarForm" class="auth" enctype="multipart/form-data">
         <label>Avatar (jpg/png/webp, max 2MB)</label>
-        <input type="file" name="avatar" accept="image/*" />
+        <input type="file" name="avatar" accept="image/jpeg,image/jpg,image/png,image/webp" />
         <button type="submit">Upload</button>
       </form>
     </div>

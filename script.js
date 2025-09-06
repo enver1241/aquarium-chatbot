@@ -338,12 +338,59 @@ function wireProfilePage() {
     });
   }
 
-  // Avatar upload - placeholder
+  // Avatar upload
   const avatarForm = $("#avatarForm");
   if (avatarForm) {
     avatarForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      alert("Avatar upload feature will be available soon!");
+      
+      const fileInput = avatarForm.querySelector('input[type="file"]');
+      const submitBtn = avatarForm.querySelector('button[type="submit"]');
+      
+      if (!fileInput.files[0]) {
+        alert("Please select an image file");
+        return;
+      }
+      
+      const file = fileInput.files[0];
+      if (file.size > 2 * 1024 * 1024) {
+        alert("File size must be less than 2MB");
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('avatar', file);
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Uploading...";
+      
+      try {
+        const res = await fetch('/api/profile/avatar', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.ok) {
+          // Update avatar image
+          const avatarImg = $("#avatarImg");
+          if (avatarImg) {
+            avatarImg.src = data.avatar_url + '?t=' + Date.now(); // Cache bust
+          }
+          
+          alert("Avatar updated successfully!");
+          fileInput.value = ''; // Clear file input
+        } else {
+          throw new Error(data.error || 'Upload failed');
+        }
+      } catch (err) {
+        console.error('Avatar upload error:', err);
+        alert('Upload failed: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Upload";
+      }
     });
   }
 }

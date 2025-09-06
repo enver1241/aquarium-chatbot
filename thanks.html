@@ -4,178 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Thank you</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    
-    .card {
-      background: #fff;
-      width: 100%;
-      max-width: 500px;
-      padding: 40px;
-      border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,.1);
-      text-align: center;
-      backdrop-filter: blur(10px);
-    }
-    
-    h2 {
-      font-size: 32px;
-      margin: 0 0 20px;
-      color: #333;
-      font-weight: 600;
-    }
-    
-    p {
-      font-size: 18px;
-      color: #666;
-      margin: 16px 0;
-      line-height: 1.6;
-    }
-    
-    #redirect-msg {
-      font-size: 16px;
-      color: #888;
-      margin: 24px 0;
-    }
-    
-    #countdown {
-      font-weight: 600;
-      color: #0d6efd;
-    }
-    
-    a.btn {
-      display: inline-block;
-      margin-top: 20px;
-      background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
-      color: #fff;
-      padding: 16px 24px;
-      text-decoration: none;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 16px;
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    a.btn:hover {
-      background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3);
-    }
-    
-    /* Mobile optimizations */
-    @media (max-width: 768px) {
-      body {
-        padding: 16px;
-      }
-      
-      .card {
-        padding: 32px 24px;
-        border-radius: 16px;
-      }
-      
-      h2 {
-        font-size: 28px;
-      }
-      
-      p {
-        font-size: 16px;
-      }
-      
-      #redirect-msg {
-        font-size: 15px;
-      }
-      
-      a.btn {
-        padding: 14px 20px;
-        font-size: 15px;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .card {
-        padding: 24px 20px;
-      }
-      
-      h2 {
-        font-size: 24px;
-      }
-      
-      p {
-        font-size: 15px;
-      }
-      
-      a.btn {
-        padding: 12px 18px;
-        font-size: 14px;
-      }
-    }
-    
-    /* Desktop enhancements */
-    @media (min-width: 1024px) {
-      .card {
-        padding: 48px;
-        max-width: 600px;
-      }
-      
-      h2 {
-        font-size: 36px;
-      }
-      
-      p {
-        font-size: 20px;
-      }
-      
-      a.btn {
-        padding: 18px 28px;
-        font-size: 17px;
-      }
-    }
-    
-    /* Accessibility improvements */
-    @media (prefers-reduced-motion: reduce) {
-      * {
-        transition: none !important;
-        transform: none !important;
-      }
-    }
-  </style>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}
+    body{
+      font-family:'Poppins',sans-serif;
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px
+    }
+    .card{background:#fff;width:100%;max-width:600px;padding:40px;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.1);text-align:center}
+    h2{font-size:32px;margin:0 0 20px;color:#333;font-weight:600}
+    p{font-size:18px;color:#666;margin:16px 0;line-height:1.6}
+    #redirect-msg{font-size:16px;color:#888;margin:24px 0}
+    #countdown{font-weight:600;color:#0d6efd}
+    a.btn{display:inline-block;margin-top:20px;background:linear-gradient(135deg,#0d6efd 0%,#0056b3 100%);color:#fff;padding:16px 24px;text-decoration:none;border-radius:12px;font-weight:600;font-size:16px;transition:.3s;letter-spacing:.5px}
+    a.btn:hover{background:linear-gradient(135deg,#0056b3 0%,#004085 100%);transform:translateY(-2px);box-shadow:0 8px 20px rgba(13,110,253,.3)}
+    @media (max-width:768px){.card{padding:32px 24px} h2{font-size:28px} p{font-size:16px}}
+    @media (max-width:480px){.card{padding:24px 20px} h2{font-size:24px} p{font-size:15px}}
+    @media (prefers-reduced-motion:reduce){*{transition:none !important;transform:none !important}}
+  </style>
 </head>
 <body>
   <div class="card">
     <h2>✅ Thank you!</h2>
     <p>Your feedback has been sent and saved successfully.</p>
     <p id="redirect-msg">Redirecting to home page in <span id="countdown">10</span> seconds...</p>
-    <a class="btn" href="index.html">← Back to Home Now</a>
+    <a class="btn" href="/index.html">← Back to Home Now</a>
   </div>
-  
+
   <script>
     let countdown = 10;
-    const countdownElement = document.getElementById('countdown');
-    
-    const timer = setInterval(() => {
-      countdown--;
-      countdownElement.textContent = countdown;
-      
-      if (countdown <= 0) {
-        clearInterval(timer);
-        window.location.href = 'index.html';
-      }
+    const el = document.getElementById('countdown');
+    const t = setInterval(() => {
+      countdown--; el.textContent = countdown;
+      if (countdown <= 0) { clearInterval(t); window.location.href = '/index.html'; }
     }, 1000);
   </script>
 </body>

@@ -11,6 +11,7 @@ const bcrypt = require('bcryptjs');
 const BetterSqlite3 = require('better-sqlite3');
 const session = require('express-session');
 const BetterSqlite3Store = require('better-sqlite3-session-store')(session);
+const multer = require('multer');
 const OpenAI = require('openai');
 
 const PORT = Number(process.env.PORT) || 10000;
@@ -18,6 +19,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'dev_secret';
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'db.sqlite');
 const SESSIONS_DB = process.env.SESSIONS_DB || path.join(__dirname, 'sessions.sqlite');
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -54,6 +56,39 @@ function ensureFile(filePath) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, '');
 }
+
+function ensureDir(dirPath) {
+  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+}
+
+// Multer configuration for avatar uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    ensureDir(UPLOADS_DIR);
+    cb(null, UPLOADS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const filename = `avatar_${req.session.userId}_${Date.now()}${ext}`;
+    cb(null, filename);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only image files (jpg, png, webp) are allowed'));
+    }
+  }
+});
 
 // --- DB
 ensureFile(DB_PATH);
@@ -167,7 +202,7 @@ app.get('/api/profile', (req, res) => {
     id: user.id,
     username: user.username,
     display_name: user.display_name || user.username,
-    avatar_url: user.avatar_url || '/uploads/default-avatar.png'
+    avatar_url: user.avatar_url || '/uploads/default-avatar.svg'
   });
 });
 
@@ -183,6 +218,42 @@ app.put('/api/profile', (req, res) => {
   } catch (e) {
     console.error('Profile update error:', e);
     res.status(500).json({ error: 'Update failed' });
+  }
+});
+
+// Avatar upload endpoint
+app.post('/api/profile/avatar', upload.single('avatar'), (req, res) => {
+  if (!isAuthed(req)) return res.status(401).json({ error: 'Not authenticated' });
+  
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  
+  const userId = req.session.user.id;
+  const avatarUrl = `/uploads/${req.file.filename}`;
+  
+  try {
+    // Delete old avatar file if exists
+    const oldUser = db.prepare('SELECT avatar_url FROM users WHERE id = ?').get(userId);
+    if (oldUser && oldUser.avatar_url && oldUser.avatar_url !== '/uploads/default-avatar.svg') {
+      const oldPath = path.join(__dirname, oldUser.avatar_url);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+    
+    // Update database
+    db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarUrl, userId);
+    req.session.user.avatar_url = avatarUrl;
+    
+    res.json({ ok: true, avatar_url: avatarUrl });
+  } catch (e) {
+    console.error('Avatar upload error:', e);
+    // Clean up uploaded file on error
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    res.status(500).json({ error: 'Upload failed' });
   }
 });
 

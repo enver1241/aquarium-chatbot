@@ -108,7 +108,7 @@ body {
 }
 
 .brand-logo {
-  height: 40px;
+  height: 48px;
   width: auto;
   border-radius: var(--radius-md);
   transition: transform 0.2s ease;
@@ -623,7 +623,7 @@ body {
   }
   
   .brand-logo {
-    height: 28px;
+    height: 24px;
   }
   
   .container {
@@ -673,7 +673,7 @@ body {
   }
   
   .brand-logo {
-    height: 24px;
+    height: 20px;
   }
   
   .container {

@@ -116,15 +116,29 @@ function setupResponsiveNavbar() {
     btn.setAttribute("aria-expanded", "true");
   };
 
-  // Prevent iOS double-tap issues
+  // Improved mobile touch handling
+  let touchStartTime = 0;
+  
   btn.addEventListener("touchstart", (e) => {
-    e.preventDefault();
+    touchStartTime = Date.now();
+  }, { passive: true });
+
+  btn.addEventListener("touchend", (e) => {
+    const touchDuration = Date.now() - touchStartTime;
+    if (touchDuration < 300) { // Quick tap
+      e.preventDefault();
+      e.stopPropagation();
+      menu.classList.contains("open") ? closeMenu() : openMenu();
+    }
   }, { passive: false });
 
   btn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    menu.classList.contains("open") ? closeMenu() : openMenu();
+    // Only handle click if not on touch device or if touch events failed
+    if (!('ontouchstart' in window)) {
+      e.preventDefault();
+      e.stopPropagation();
+      menu.classList.contains("open") ? closeMenu() : openMenu();
+    }
   });
 
   // Close menu when clicking links

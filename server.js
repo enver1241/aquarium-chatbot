@@ -31,7 +31,7 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"],
+      imgSrc: ["'self'", "data:", "https:", 'http:', 'blob:'],
       connectSrc: ["'self'"],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
@@ -60,8 +60,17 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Static + index
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Static files
 app.use(express.static(__dirname, { extensions: ['html'] }));
+app.use('/uploads', express.static(uploadsDir));
+
+// Index route
 app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // Explicit route for thanks.html to ensure it's served properly
@@ -115,6 +124,30 @@ const isAuthed = (req) => !!(req.session && req.session.user);
 
 // --- Health & Diag
 app.get('/health', (_req, res) => res.type('text/plain').send('ok'));
+
+// Test file upload endpoint
+app.post('/api/test-upload', upload.single('testfile'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    console.log('Test file uploaded:', req.file);
+    res.json({
+      ok: true,
+      file: {
+        originalname: req.file.originalname,
+        filename: req.file.filename,
+        path: req.file.path,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      }
+    });
+  } catch (error) {
+    console.error('Test upload error:', error);
+    res.status(500).json({ error: 'Test upload failed' });
+  }
+});
 app.get('/diag', (_req, res) => {
   res.json({ ok: true, node: process.version, hasKey: !!OPENAI_API_KEY });
 });

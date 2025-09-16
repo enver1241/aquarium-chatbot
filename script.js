@@ -386,28 +386,45 @@ function wireProfilePage() {
       submitBtn.textContent = "Uploading...";
       
       try {
+        console.log('Starting file upload...');
         const res = await fetch('/api/profile/avatar', {
           method: 'POST',
+          credentials: 'same-origin', // Important for sessions
           body: formData
         });
         
-        const data = await res.json();
+        console.log('Upload response status:', res.status);
         
-        if (res.ok && data.ok) {
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Upload error response:', errorText);
+          throw new Error(`Server responded with ${res.status}: ${errorText}`);
+        }
+        
+        const data = await res.json();
+        console.log('Upload response data:', data);
+        
+        if (data.ok) {
           // Update avatar image
           const avatarImg = $("#avatarImg");
           if (avatarImg) {
-            avatarImg.src = data.avatar_url + '?t=' + Date.now(); // Cache bust
+            const newUrl = data.avatar_url + '?t=' + Date.now(); // Cache bust
+            console.log('Updating avatar image source to:', newUrl);
+            avatarImg.src = newUrl;
+            
+            // Also update the avatar in the navbar if it exists
+            const navAvatar = $("#navAvatar");
+            if (navAvatar) navAvatar.src = newUrl;
           }
           
           alert("Avatar updated successfully!");
           fileInput.value = ''; // Clear file input
         } else {
-          throw new Error(data.error || 'Upload failed');
+          throw new Error(data.error || 'Upload failed: Unknown error');
         }
       } catch (err) {
         console.error('Avatar upload error:', err);
-        alert('Upload failed: ' + err.message);
+        alert('Upload failed: ' + (err.message || 'Unknown error occurred'));
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = "Upload";

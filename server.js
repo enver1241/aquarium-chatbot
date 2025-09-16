@@ -29,14 +29,16 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:", 'http:', 'blob:'],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      imgSrc: ["'self'", "data:", "https:", 'http:', 'blob:', '*'],
+      connectSrc: ["'self'", 'https://api.openai.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"]
+      frameSrc: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: []
     }
   }
 }));
@@ -67,12 +69,19 @@ if (!fs.existsSync(uploadsDir)) {
   console.log('Created uploads directory at:', uploadsDir);
 }
 
-// Static files
-app.use(express.static(path.join(__dirname, 'public')));
+// Static files with proper caching and CORS
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1d',
+  setHeaders: (res, path) => {
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day
+  }
+}));
+
+// Serve uploads with proper CORS and caching
 app.use('/uploads', express.static(uploadsDir, {
   setHeaders: (res, path) => {
-    // Set proper cache control for uploaded files
-    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
 }));
 
@@ -275,8 +284,13 @@ app.put('/api/profile', (req, res) => {
   }
 });
 
-// Handle avatar upload
+// Handle avatar upload with cache busting
 app.post('/api/profile/avatar', isAuthed, upload.single('avatar'), async (req, res) => {
+  // Add cache busting
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
   console.log('Avatar upload request received');
   console.log('Session user:', req.session.user);
   

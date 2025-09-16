@@ -387,40 +387,72 @@ function wireProfilePage() {
       
       try {
         console.log('Starting file upload...');
-        const res = await fetch('/api/profile/avatar', {
+        // Add cache busting parameter to the URL
+        const uploadUrl = '/api/profile/avatar?_=' + Date.now();
+        
+        const res = await fetch(uploadUrl, {
           method: 'POST',
-          credentials: 'same-origin', // Important for sessions
+          credentials: 'same-origin',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
           body: formData
         });
         
         console.log('Upload response status:', res.status);
         
         if (!res.ok) {
-          const errorText = await res.text();
+          let errorText;
+          try {
+            const errorData = await res.json();
+            errorText = errorData.error || errorData.message || 'Unknown error';
+          } catch (e) {
+            errorText = await res.text() || 'Unknown error';
+          }
           console.error('Upload error response:', errorText);
-          throw new Error(`Server responded with ${res.status}: ${errorText}`);
+          throw new Error(`Upload failed: ${errorText}`);
         }
         
         const data = await res.json();
         console.log('Upload response data:', data);
         
-        if (data.ok) {
-          // Update avatar image
+        if (data && data.avatar_url) {
+          // Update avatar image with cache busting
           const avatarImg = $("#avatarImg");
           if (avatarImg) {
-            const newUrl = data.avatar_url + '?t=' + Date.now(); // Cache bust
+            const timestamp = Date.now();
+            const newUrl = `${data.avatar_url}${data.avatar_url.includes('?') ? '&' : '?'}t=${timestamp}`;
             console.log('Updating avatar image source to:', newUrl);
-            avatarImg.src = newUrl;
             
-            // Also update the avatar in the navbar if it exists
-            const navAvatar = $("#navAvatar");
-            if (navAvatar) navAvatar.src = newUrl;
+            // Force reload the image
+            const img = new Image();
+            img.onload = function() {
+              avatarImg.src = newUrl;
+              // Also update the avatar in the navbar if it exists
+              const navAvatar = $("#navAvatar");
+              if (navAvatar) navAvatar.src = newUrl;
+              
+              // Force browser to update the image
+              avatarImg.style.display = 'none';
+              avatarImg.offsetHeight; // Trigger reflow
+              avatarImg.style.display = '';
+              
+              showToast('Avatar updated successfully!', 'success');
+            };
+            img.onerror = function() {
+              console.error('Failed to load new avatar image');
+              showToast('Avatar updated but preview failed to load', 'warning');
+            };
+            img.src = newUrl;
+          } else {
+            showToast('Avatar updated!', 'success');
           }
           
-          alert("Avatar updated successfully!");
           fileInput.value = ''; // Clear file input
         } else {
-          throw new Error(data.error || 'Upload failed: Unknown error');
+          throw new Error('Invalid response from server');
         }
       } catch (err) {
         console.error('Avatar upload error:', err);

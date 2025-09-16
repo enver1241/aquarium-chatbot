@@ -60,15 +60,24 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, 'uploads');
+// Ensure uploads directory exists with proper permissions
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+  fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
+  console.log('Created uploads directory at:', uploadsDir);
 }
 
 // Static files
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(uploadsDir, {
+  setHeaders: (res, path) => {
+    // Set proper cache control for uploaded files
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+  }
+}));
+
+// Serve static files from root for backward compatibility
 app.use(express.static(__dirname, { extensions: ['html'] }));
-app.use('/uploads', express.static(uploadsDir));
 
 // Index route
 app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -267,63 +276,54 @@ app.put('/api/profile', (req, res) => {
 });
 
 // Handle avatar upload
-app.post('/api/profile/avatar', isAuthed, (req, res, next) => {
+app.post('/api/profile/avatar', isAuthed, upload.single('avatar'), async (req, res) => {
   console.log('Avatar upload request received');
   console.log('Session user:', req.session.user);
   
-  // Handle the upload
-  upload.single('avatar')(req, res, async (err) => {
-    console.log('Upload handler called');
+  if (!req.file) {
+    console.log('No file in request');
+    return res.status(400).json({ error: 'No file uploaded or invalid file type' });
+  }
+
+  console.log('File uploaded successfully:', req.file);
+
+  try {
+    const userId = req.session.user.id;
+    // Make sure the path is URL-friendly and consistent
+    const avatarUrl = '/uploads/' + path.basename(req.file.filename);
     
-    if (err) {
-      console.error('Multer error:', err);
-      return res.status(400).json({ error: err.message || 'File upload failed' });
+    console.log('Updating user profile with avatar:', { userId, avatarUrl });
+    
+    // Update user's avatar in database
+    const stmt = db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?');
+    const result = stmt.run(avatarUrl, userId);
+    
+    console.log('Database update result:', result);
+    
+    if (result.changes === 0) {
+      throw new Error('User not found or no changes made');
     }
     
-    if (!req.file) {
-      console.log('No file in request');
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    console.log('File uploaded successfully:', req.file);
-
-    try {
-      const userId = req.session.user.id;
-      const avatarUrl = '/uploads/' + path.basename(req.file.path);
-      
-      console.log('Updating user profile with avatar:', { userId, avatarUrl });
-      
-      // Update user's avatar in database
-      const stmt = db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?');
-      const result = stmt.run(avatarUrl, userId);
-      
-      console.log('Database update result:', result);
-      
-      if (result.changes === 0) {
-        throw new Error('User not found or no changes made');
-      }
-      
-      // Update session
-      req.session.user.avatar_url = avatarUrl;
-      
-      console.log('Avatar update successful, sending response');
-      
-      res.json({ 
-        ok: true, 
-        avatar_url: avatarUrl 
+    // Update session
+    req.session.user.avatar_url = avatarUrl;
+    
+    console.log('Avatar update successful, sending response');
+    
+    res.json({ 
+      ok: true, 
+      avatar_url: avatarUrl 
+    });
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    // Clean up the uploaded file if there was an error
+    if (req.file && req.file.path) {
+      console.log('Cleaning up uploaded file:', req.file.path);
+      fs.unlink(req.file.path, (unlinkErr) => {
+        if (unlinkErr) console.error('Error cleaning up file:', unlinkErr);
       });
-    } catch (error) {
-      console.error('Avatar upload error:', error);
-      // Clean up the uploaded file if there was an error
-      if (req.file) {
-        console.log('Cleaning up uploaded file:', req.file.path);
-        fs.unlink(req.file.path, (unlinkErr) => {
-          if (unlinkErr) console.error('Error cleaning up file:', unlinkErr);
-        });
-      }
-      res.status(500).json({ error: 'Failed to upload avatar: ' + error.message });
     }
-  });
+    res.status(500).json({ error: 'Failed to update avatar', details: error.message });
+  }
 });
 
 // --- Admin routes

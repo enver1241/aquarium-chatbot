@@ -1,7 +1,25 @@
+# Dependencies
 node_modules/
+
+# Environment variables
 .env
-feedback.db
+
+# Database files
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
+feedback.db
+
+# Logs
 npm-debug.log
+
+# System files
 .DS_Store
-.env
+
+# Uploads directory
+/uploads/*
+!uploads/.gitkeep
+
+# Database backups
+*.sqlite.bak
+*.db.bak

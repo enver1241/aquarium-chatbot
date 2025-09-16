@@ -290,21 +290,43 @@ app.put('/api/profile', (req, res) => {
 });
 
 // Handle avatar upload with cache busting
-app.post('/api/profile/avatar', isAuthed, upload.single('avatar'), async (req, res) => {
-  // Add cache busting
+app.post('/api/profile/avatar', isAuthed, (req, res, next) => {
+  // Add cache busting headers
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.setHeader('Surrogate-Control', 'no-store');
-  console.log('Avatar upload request received');
-  console.log('Session user:', req.session.user);
   
-  if (!req.file) {
-    console.log('No file in request');
-    return res.status(400).json({ error: 'No file uploaded or invalid file type' });
-  }
+  console.log('=== AVATAR UPLOAD REQUEST ===');
+  console.log('Session user:', req.session.user);
+  console.log('Request headers:', req.headers);
+  
+  // Use multer's error handling
+  upload.single('avatar')(req, res, function(err) {
+    if (err) {
+      console.error('Multer upload error:', err);
+      return res.status(400).json({ error: err.message || 'File upload failed' });
+    }
+    
+    if (!req.file) {
+      console.log('No file in request or invalid file type');
+      console.log('Request files:', req.files);
+      console.log('Request body:', req.body);
+      return res.status(400).json({ error: 'No file uploaded or invalid file type' });
+    }
 
-  console.log('File uploaded successfully:', req.file);
+    console.log('File uploaded successfully:', {
+      originalname: req.file.originalname,
+      filename: req.file.filename,
+      path: req.file.path,
+      size: req.file.size,
+      mimetype: req.file.mimetype
+    });
+    
+    // Continue to the next middleware
+    next();
+  });
+}, async (req, res) => {
 
   try {
     const userId = req.session.user.id;

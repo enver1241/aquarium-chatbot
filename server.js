@@ -185,7 +185,7 @@ app.get('/api/profile', (req, res) => {
     id: user.id,
     username: user.username,
     display_name: user.display_name || user.username,
-    avatar_url: user.avatar_url || '/uploads/default-avatar.png'
+    avatar_url: user.avatar_url || '/uploads/default-avatar.svg'
   });
 });
 

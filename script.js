@@ -205,7 +205,7 @@ function renderNavUser(user) {
       });
       prof.after(img);
     }
-    img.src = user.avatar_url || "/uploads/default-avatar.png";
+    img.src = user.avatar_url || "/uploads/default-avatar.svg";
   }
 }
 
@@ -317,7 +317,7 @@ function wireProfilePage() {
       const nameInput = document.querySelector('input[name="display_name"]');
       if (nameInput) nameInput.value = u.display_name || u.username || "";
       const img = $("#avatarImg");
-      if (img) img.src = u.avatar_url || "/uploads/default-avatar.png";
+      if (img) img.src = u.avatar_url || "/uploads/default-avatar.svg";
     })
     .catch((e) => {
       console.error("Profile load error:", e);

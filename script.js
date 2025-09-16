@@ -420,10 +420,15 @@ function wireProfilePage() {
         
         if (data && data.avatar_url) {
           // Update avatar image with cache busting
-          const avatarImg = $("#avatarImg");
+          const avatarImg = document.getElementById("avatarImg");
           if (avatarImg) {
             const timestamp = Date.now();
-            const newUrl = `${data.avatar_url}${data.avatar_url.includes('?') ? '&' : '?'}t=${timestamp}`;
+            // Ensure we have a proper URL
+            let newUrl = data.avatar_url;
+            if (!newUrl.startsWith('http') && !newUrl.startsWith('/')) {
+              newUrl = '/' + newUrl;
+            }
+            newUrl += `${newUrl.includes('?') ? '&' : '?'}t=${timestamp}`;
             console.log('Updating avatar image source to:', newUrl);
             
             // Force reload the image
@@ -431,23 +436,40 @@ function wireProfilePage() {
             img.onload = function() {
               avatarImg.src = newUrl;
               // Also update the avatar in the navbar if it exists
-              const navAvatar = $("#navAvatar");
-              if (navAvatar) navAvatar.src = newUrl;
+              const navAvatar = document.getElementById("navAvatar");
+              if (navAvatar) {
+                navAvatar.src = newUrl;
+                // Force browser to update the image
+                navAvatar.style.display = 'none';
+                navAvatar.offsetHeight; // Trigger reflow
+                navAvatar.style.display = '';
+              }
               
-              // Force browser to update the image
+              // Force browser to update the main avatar
               avatarImg.style.display = 'none';
               avatarImg.offsetHeight; // Trigger reflow
               avatarImg.style.display = '';
+              
+              // Force a hard reload of the page to ensure all references are updated
+              setTimeout(() => {
+                window.location.reload(true);
+              }, 1000);
               
               showToast('Avatar updated successfully!', 'success');
             };
             img.onerror = function() {
               console.error('Failed to load new avatar image');
-              showToast('Avatar updated but preview failed to load', 'warning');
+              showToast('Avatar updated but preview failed to load. Refreshing page...', 'warning');
+              setTimeout(() => {
+                window.location.reload(true);
+              }, 1000);
             };
             img.src = newUrl;
           } else {
-            showToast('Avatar updated!', 'success');
+            showToast('Avatar updated! Refreshing page...', 'success');
+            setTimeout(() => {
+              window.location.reload(true);
+            }, 1000);
           }
           
           fileInput.value = ''; // Clear file input

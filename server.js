@@ -63,7 +63,12 @@ app.use((req, _res, next) => {
 });
 
 // Ensure uploads directory exists with proper permissions
-const uploadsDir = path.join(__dirname, 'public', 'uploads');
+const uploadsDir = path.join(__dirname, 'uploads');
+// Ensure uploads directory exists with proper permissions
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
+  console.log('Created uploads directory at:', uploadsDir);
+}
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
   console.log('Created uploads directory at:', uploadsDir);
@@ -307,6 +312,15 @@ app.post('/api/profile/avatar', isAuthed, upload.single('avatar'), async (req, r
     // Get the filename from the stored file (req.file.filename is set by multer)
     const filename = req.file.filename;
     const avatarUrl = '/uploads/' + filename;
+    
+    // Ensure the file is properly moved to the final location
+    const tempPath = req.file.path;
+    const targetPath = path.join(uploadsDir, filename);
+    
+    // If the file is already in the right place, no need to move it
+    if (tempPath !== targetPath) {
+      fs.renameSync(tempPath, targetPath);
+    }
     
     console.log('Updating user profile with avatar:', { userId, avatarUrl });
     

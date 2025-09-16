@@ -125,29 +125,7 @@ const isAuthed = (req) => !!(req.session && req.session.user);
 // --- Health & Diag
 app.get('/health', (_req, res) => res.type('text/plain').send('ok'));
 
-// Test file upload endpoint
-app.post('/api/test-upload', upload.single('testfile'), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    
-    console.log('Test file uploaded:', req.file);
-    res.json({
-      ok: true,
-      file: {
-        originalname: req.file.originalname,
-        filename: req.file.filename,
-        path: req.file.path,
-        size: req.file.size,
-        mimetype: req.file.mimetype
-      }
-    });
-  } catch (error) {
-    console.error('Test upload error:', error);
-    res.status(500).json({ error: 'Test upload failed' });
-  }
-});
+// Test file upload endpoint moved after upload middleware
 app.get('/diag', (_req, res) => {
   res.json({ ok: true, node: process.version, hasKey: !!OPENAI_API_KEY });
 });
@@ -230,12 +208,34 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (allowedTypes.includes(file.mimetype)) {
+    if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type. Only JPEG, PNG, and WebP are allowed.'));
+      cb(new Error('Only image files are allowed'), false);
     }
+  }
+});
+
+// Test file upload endpoint
+app.post('/api/test-upload', upload.single('testfile'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    console.log('Test file uploaded:', req.file);
+    res.json({
+      ok: true,
+      file: {
+        originalname: req.file.originalname,
+        filename: req.file.filename,
+        size: req.file.size,
+        mimetype: req.file.mimetype
+      }
+    });
+  } catch (error) {
+    console.error('Test upload error:', error);
+    res.status(500).json({ error: 'Upload failed', details: error.message });
   }
 });
 

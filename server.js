@@ -289,10 +289,15 @@ app.post('/api/profile/avatar', isAuthed, upload.single('avatar'), async (req, r
 
   try {
     const userId = req.session.user.id;
-    // Make sure the path is URL-friendly and consistent
-    const avatarUrl = '/uploads/' + path.basename(req.file.filename);
+    
+    // Get the filename from the stored file (req.file.filename is set by multer)
+    const filename = req.file.filename;
+    const avatarUrl = '/uploads/' + filename;
     
     console.log('Updating user profile with avatar:', { userId, avatarUrl });
+    
+    // First, get the old avatar URL to delete it later
+    const oldAvatar = db.prepare('SELECT avatar_url FROM users WHERE id = ?').get(userId);
     
     // Update user's avatar in database
     const stmt = db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?');
@@ -302,6 +307,17 @@ app.post('/api/profile/avatar', isAuthed, upload.single('avatar'), async (req, r
     
     if (result.changes === 0) {
       throw new Error('User not found or no changes made');
+    }
+    
+    // Delete old avatar file if it exists and is not the default
+    if (oldAvatar && oldAvatar.avatar_url && !oldAvatar.avatar_url.includes('default-avatar')) {
+      const oldAvatarPath = path.join(__dirname, 'public', oldAvatar.avatar_url);
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlink(oldAvatarPath, (err) => {
+          if (err) console.error('Error deleting old avatar:', err);
+          else console.log('Old avatar deleted:', oldAvatarPath);
+        });
+      }
     }
     
     // Update session

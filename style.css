@@ -108,7 +108,7 @@ body {
 }
 
 .brand-logo {
-  height: 48px;
+  height: 170px;
   width: auto;
   border-radius: var(--radius-md);
   transition: transform 0.2s ease;

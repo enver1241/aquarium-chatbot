@@ -1,17 +1,81 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>My Profile</title>
+  <title data-i18n="profile.title">My Profile</title>
   <link rel="stylesheet" href="style.css" />
   <script src="script.js" defer></script>
+  <style>
+    .profile-card {
+      max-width: 500px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .avatar {
+      display: block;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 0 auto 1.5rem;
+      border: 3px solid #eef2ff;
+    }
+    
+    .auth {
+      margin-bottom: 2rem;
+    }
+    
+    .auth:last-child {
+      margin-bottom: 0;
+    }
+    
+    .auth label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    
+    .auth input[type="text"],
+    .auth input[type="file"] {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    .auth button[type="submit"] {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .auth button[type="submit"]:hover {
+      background-color: #4338ca;
+    }
+    
+    .auth button[type="submit"]:disabled {
+      background-color: #a5b4fc;
+      cursor: not-allowed;
+    }
+  </style>
 </head>
 <body>
   <header class="topbar">
     <div class="brand">
-      <img src="aqualifeai.png" alt="AquaLifeAI Logo" class="brand-logo" />
-      <strong>My Profile</strong>
+      <a href="index.html">
+        <img src="aqualifeai.png" alt="AquaLifeAI Logo" class="brand-logo" />
+      </a>
+      <strong data-i18n="profile.title">My Profile</strong>
     </div>
 
     <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navMenu">
@@ -19,26 +83,46 @@
     </button>
 
     <nav id="navMenu" class="nav-links" role="navigation">
-      <a href="index.html">Home</a>
-      <a href="Chatbot.html">Chatbot</a>
-      <a href="profile.html" style="background:#eef2ff">Profile</a>
-      <a id="logoutBtn" class="btn btn-outline" href="#">Logout</a>
+      <a href="index.html" data-i18n="nav.home">Home</a>
+      <a href="Chatbot.html" data-i18n="nav.chatbot">Chatbot</a>
+      <a href="feedback.html" data-i18n="nav.feedback">Feedback</a>
+      <a href="profile.html" style="background:#eef2ff" data-i18n="nav.profile" aria-current="page">Profile</a>
+      <a id="logoutBtn" class="btn btn-outline" href="#" data-i18n="nav.logout">Logout</a>
+      <button id="langToggle" class="btn btn-outline" aria-label="Toggle language">🌐</button>
     </nav>
   </header>
 
   <main class="container">
     <div class="profile-card">
-      <img id="avatarImg" src="" alt="avatar" class="avatar" />
+      <img id="avatarImg" src="/uploads/default-avatar.svg" alt="avatar" class="avatar" />
+      
       <form id="nameForm" class="auth">
-        <label>Display name</label>
-        <input name="display_name" placeholder="Your name" />
-        <button type="submit">Save</button>
+        <h2 data-i18n="profile.personalInfo">Personal Information</h2>
+        <label for="displayName" data-i18n="profile.displayName">Display name</label>
+        <input 
+          id="displayName" 
+          name="display_name" 
+          type="text" 
+          data-i18n-placeholder="profile.displayNamePlaceholder" 
+          placeholder="Your name" 
+          required 
+        />
+        <button type="submit" data-i18n="profile.saveButton">Save</button>
       </form>
 
-      <form id="avatarForm" class="auth" enctype="multipart/form-data">
-        <label>Avatar (jpg/png/webp, max 2MB)</label>
-        <input type="file" name="avatar" accept="image/jpeg,image/jpg,image/png,image/webp" />
-        <button type="submit">Upload</button>
+      <form id="avatarForm" class="auth">
+        <h2 data-i18n="profile.avatar">Profile Picture</h2>
+        <label for="avatarInput" data-i18n="profile.avatarLabel">Avatar (jpg/png/webp, max 2MB)</label>
+        <input 
+          id="avatarInput"
+          type="file" 
+          name="avatar" 
+          accept="image/jpeg,image/jpg,image/png,image/webp" 
+          data-i18n-placeholder="profile.avatarPlaceholder"
+          aria-describedby="avatarHelp"
+        />
+        <small id="avatarHelp" class="text-muted" data-i18n="profile.avatarHelp">Recommended size: 200x200 pixels</small>
+        <button type="submit" data-i18n="profile.uploadButton">Upload</button>
       </form>
     </div>
   </main>

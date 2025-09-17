@@ -1,3 +1,187 @@
+// ============ i18n ============
+const translations = {
+  en: {
+    // Navigation
+    'nav.home': 'Home',
+    'nav.chatbot': 'Chatbot',
+    'nav.feedback': 'Feedback',
+    'nav.login': 'Login',
+    'nav.register': 'Register',
+    'nav.newChat': '+ New Chat',
+    'nav.logout': 'Logout',
+    'nav.openChat': 'Open Chat',
+    'nav.profile': 'Profile',
+    
+    // Home page
+    'home.title': 'Welcome to the Aquarium ChatBot Website',
+    'home.subtitle': 'Discover aquatic life, get care tips, and interact with our intelligent bot!',
+    'home.goChatbot': 'Go to ChatBot',
+    'home.about': 'About us',
+    'home.aboutText': 'This website is designed for users who want to learn about aquarium creatures. Users can ask questions through the AI-powered chatbot and get answers instantly. Our project aims to make aquarium maintenance more accessible and fun.',
+    
+    // Login page
+    'login.title': '🔐 Welcome back',
+    'login.email': 'Email Address',
+    'login.emailPlaceholder': 'Enter your email',
+    'login.password': 'Password',
+    'login.passwordPlaceholder': 'Enter your password',
+    'login.submit': 'Login to Account',
+    'login.noAccount': 'No account?',
+    'login.createAccount': 'Create one here',
+    'login.error.required': 'Username & password required',
+    'login.error.network': 'Network error',
+    'login.error.failed': 'Login failed',
+    
+    // Register page
+    'register.title': '🎆 Create account',
+    'register.displayName': 'Display Name (Optional)',
+    'register.displayNamePlaceholder': 'Enter your display name',
+    'register.email': 'Email Address',
+    'register.emailPlaceholder': 'Enter your email',
+    'register.password': 'Password',
+    'register.passwordPlaceholder': 'Create a password',
+    'register.submit': 'Create Account',
+    'register.haveAccount': 'Already have an account?',
+    'register.loginHere': 'Login here',
+    'register.error.required': 'Username & password required',
+    'register.error.network': 'Network error',
+    'register.error.failed': 'Registration failed',
+    
+    // Profile page
+    'profile.title': 'My Profile',
+    'profile.displayName': 'Display name',
+    'profile.displayNamePlaceholder': 'Your name',
+    'profile.saveButton': 'Save',
+    'profile.avatarLabel': 'Avatar (jpg/png/webp, max 2MB)',
+    'profile.avatarPlaceholder': 'Select an image',
+    'profile.uploadButton': 'Upload',
+    'profile.updateSuccess': 'Profile updated successfully!',
+    'profile.updateFailed': 'Failed to update profile',
+    'profile.uploadSuccess': 'Avatar uploaded successfully!',
+    'profile.uploadFailed': 'Failed to upload avatar',
+    'profile.saving': 'Saving...',
+    'profile.error.required': 'Display name is required',
+    'profile.error.selectFile': 'Please select an image file',
+    'profile.error.fileSize': 'File size must be less than 2MB',
+    'profile.uploading': 'Uploading...',
+    'profile.personalInfo': 'Personal Information',
+    'profile.avatar': 'Profile Picture',
+    'profile.avatarHelp': 'Recommended size: 200x200 pixels'
+  },
+  pl: {
+    // Navigation
+    'nav.home': 'Strona główna',
+    'nav.chatbot': 'Chatbot',
+    'nav.feedback': 'Opinie',
+    'nav.login': 'Zaloguj się',
+    'nav.register': 'Zarejestruj się',
+    'nav.newChat': '+ Nowa rozmowa',
+    'nav.logout': 'Wyloguj się',
+    'nav.openChat': 'Otwórz czat',
+    'nav.profile': 'Profil',
+    
+    // Home page
+    'home.title': 'Witamy na stronie Aquarium ChatBot',
+    'home.subtitle': 'Odkrywaj życie wodne, zdobywaj porady dotyczące pielęgnacji i rozmawiaj z naszym inteligentnym botem!',
+    'home.goChatbot': 'Przejdź do ChatBota',
+    'home.about': 'O nas',
+    'home.aboutText': 'Ta strona jest przeznaczona dla użytkowników, którzy chcą dowiedzieć się więcej o stworzeniach akwariowych. Użytkownicy mogą zadawać pytania za pomocą chatbota wspieranego sztuczną inteligencją i otrzymywać odpowiedzi natychmiast. Nasz projekt ma na celu uczynienie pielęgnacji akwarium bardziej dostępną i przyjemną.',
+    
+    // Login page
+    'login.title': '🔐 Witaj ponownie',
+    'login.email': 'Adres email',
+    'login.emailPlaceholder': 'Wprowadź swój email',
+    'login.password': 'Hasło',
+    'login.passwordPlaceholder': 'Wprowadź swoje hasło',
+    'login.submit': 'Zaloguj się',
+    'login.noAccount': 'Nie masz konta?',
+    'login.createAccount': 'Załóż je tutaj',
+    'login.error.required': 'Wymagane są nazwa użytkownika i hasło',
+    'login.error.network': 'Błąd sieci',
+    'login.error.failed': 'Logowanie nieudane',
+    
+    // Register page
+    'register.title': '🎆 Załóż konto',
+    'register.displayName': 'Nazwa wyświetlana (opcjonalnie)',
+    'register.displayNamePlaceholder': 'Wprowadź swoją nazwę wyświetlaną',
+    'register.email': 'Adres email',
+    'register.emailPlaceholder': 'Wprowadź swój email',
+    'register.password': 'Hasło',
+    'register.passwordPlaceholder': 'Utwórz hasło',
+    'register.submit': 'Załóż konto',
+    'register.haveAccount': 'Masz już konto?',
+    'register.loginHere': 'Zaloguj się tutaj',
+    'register.error.required': 'Wymagane są nazwa użytkownika i hasło',
+    'register.error.network': 'Błąd sieci',
+    'register.error.failed': 'Rejestracja nieudana',
+    
+    // Profile page
+    'profile.title': 'Mój Profil',
+    'profile.displayName': 'Nazwa wyświetlana',
+    'profile.displayNamePlaceholder': 'Twoja nazwa',
+    'profile.saveButton': 'Zapisz',
+    'profile.avatarLabel': 'Awatar (jpg/png/webp, max 2MB)',
+    'profile.avatarPlaceholder': 'Wybierz obraz',
+    'profile.uploadButton': 'Prześlij',
+    'profile.updateSuccess': 'Profil zaktualizowany pomyślnie!',
+    'profile.updateFailed': 'Nie udało się zaktualizować profilu',
+    'profile.uploadSuccess': 'Awatar przesłany pomyślnie!',
+    'profile.uploadFailed': 'Nie udało się przesłać awatara',
+    'profile.saving': 'Zapisywanie...',
+    'profile.error.required': 'Wymagana jest nazwa wyświetlana',
+    'profile.error.selectFile': 'Wybierz plik obrazu',
+    'profile.error.fileSize': 'Rozmiar pliku nie może przekraczać 2MB',
+    'profile.uploading': 'Przesyłanie...',
+    'profile.personalInfo': 'Dane osobowe',
+    'profile.avatar': 'Zdjęcie profilowe',
+    'profile.avatarHelp': 'Zalecany rozmiar: 200x200 pikseli'
+  }
+};
+
+let currentLang = localStorage.getItem('preferredLanguage') || 'en';
+
+function updateContent() {
+  // Update text content
+  document.querySelectorAll('[data-i18n]').forEach(element => {
+    const key = element.getAttribute('data-i18n');
+    if (translations[currentLang] && translations[currentLang][key]) {
+      element.textContent = translations[currentLang][key];
+    } else if (translations['en'][key]) {
+      // Fallback to English if translation is missing
+      element.textContent = translations['en'][key];
+    }
+  });
+
+  // Update input placeholders and other attributes
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+    const key = element.getAttribute('data-i18n-placeholder');
+    if (translations[currentLang] && translations[currentLang][key]) {
+      element.placeholder = translations[currentLang][key];
+    } else if (translations['en'][key]) {
+      // Fallback to English if translation is missing
+      element.placeholder = translations['en'][key];
+    }
+  });
+
+  // Update HTML lang attribute
+  const html = document.documentElement;
+  html.setAttribute('lang', currentLang);
+  html.setAttribute('data-lang', currentLang);
+}
+
+function toggleLanguage() {
+  currentLang = currentLang === 'en' ? 'pl' : 'en';
+  localStorage.setItem('preferredLanguage', currentLang);
+  updateContent();
+}
+
+function setupLanguageToggle() {
+  const toggleBtn = document.getElementById('langToggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', toggleLanguage);
+  }
+}
+
 // ============ helpers ============
 
 const $ = (sel) => document.querySelector(sel);
@@ -357,13 +541,18 @@ function wireProfilePage() {
     nameForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const display_name = nameForm.querySelector('input[name="display_name"]').value.trim();
+      const submitBtn = nameForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn.textContent;
       
       if (!display_name) {
-        alert("Please enter a display name");
+        alert(translations[currentLang]?.['profile.error.required'] || 'Display name is required');
         return;
       }
 
       try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = translations[currentLang]?.['profile.saving'] || 'Saving...';
+        
         const res = await fetch("/api/profile", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -373,16 +562,21 @@ function wireProfilePage() {
         
         const data = await res.json();
         if (!res.ok) {
-          alert(data.error || "Save error");
+          showToast(data.error || translations[currentLang]?.['profile.updateFailed'] || 'Failed to update profile', 'error');
           return;
         }
         
-        alert("Display name saved successfully!");
+        showToast(translations[currentLang]?.['profile.updateSuccess'] || 'Profile updated successfully!', 'success');
         // Update navbar if needed
         hydrateNavbar();
       } catch (e) {
         console.error("Save error:", e);
-        alert("Network error. Please try again.");
+        showToast(translations[currentLang]?.['profile.updateFailed'] || 'Failed to update profile', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtnText;
+        }
       }
     });
   }
@@ -397,13 +591,13 @@ function wireProfilePage() {
       const submitBtn = avatarForm.querySelector('button[type="submit"]');
       
       if (!fileInput.files[0]) {
-        alert("Please select an image file");
+        showToast(translations[currentLang]?.['profile.error.selectFile'] || 'Please select an image file', 'error');
         return;
       }
       
       const file = fileInput.files[0];
       if (file.size > 2 * 1024 * 1024) {
-        alert("File size must be less than 2MB");
+        showToast(translations[currentLang]?.['profile.error.fileSize'] || 'File size must be less than 2MB', 'error');
         return;
       }
       
@@ -411,7 +605,7 @@ function wireProfilePage() {
       formData.append('avatar', file);
       
       submitBtn.disabled = true;
-      submitBtn.textContent = "Uploading...";
+      submitBtn.textContent = translations[currentLang]?.['profile.uploading'] || 'Uploading...';
       
       try {
         console.log('Starting file upload...');
@@ -450,7 +644,7 @@ function wireProfilePage() {
               navAvatar.src = newUrl;
             }
             
-            showToast('Avatar updated successfully!', 'success');
+            showToast(translations[currentLang]?.['profile.uploadSuccess'] || 'Avatar uploaded successfully!', 'success');
           }
           
           fileInput.value = ''; // Clear file input
@@ -459,10 +653,11 @@ function wireProfilePage() {
         }
       } catch (err) {
         console.error('Avatar upload error:', err);
-        alert('Upload failed: ' + (err.message || 'Unknown error occurred'));
+        const errorMessage = err.message || 'Unknown error occurred';
+        showToast(`${translations[currentLang]?.['profile.uploadFailed'] || 'Upload failed'}: ${errorMessage}`, 'error');
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = "Upload";
+        submitBtn.textContent = translations[currentLang]?.['profile.uploadButton'] || 'Upload';
       }
     });
   }
@@ -471,6 +666,11 @@ function wireProfilePage() {
 // ============ boot ============
 
 domReady(() => {
+  // Initialize language system
+  setupLanguageToggle();
+  updateContent();
+  
+  // Rest of initialization
   // Navbar
   setupResponsiveNavbar();
   hydrateNavbar();

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -18,48 +18,72 @@
     </button>
     
     <nav id="navMenu" class="nav-links" role="navigation">
-      <a href="index.html">Home</a>
-      <a href="register.html" class="btn btn-outline">Register</a>
+      <a href="index.html" data-i18n="nav.home">Home</a>
+      <a href="register.html" class="btn btn-outline" data-i18n="nav.register">Register</a>
+      <button id="langToggle" class="btn btn-outline" aria-label="Toggle language">🌐</button>
     </nav>
   </header>
-<script>
-async function loginSubmit(e){
-  e.preventDefault();
-  const email = document.querySelector('#email')?.value?.trim();
-  const username = document.querySelector('#username')?.value?.trim() || email;
-  const password = document.querySelector('#password')?.value;
-
-  if(!username || !password){
-    return alert('Username & password required');
-  }
-
-  try{
-    const r = await fetch('/api/login',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      credentials:'include',
-      body: JSON.stringify({ username, password })
-    });
-    const data = await r.json();
-    if(!r.ok){ return alert(data.error || 'Login failed'); }
-    location.href = '/profile.html';
-  }catch(err){
-    alert('Network error');
-  }
-}
-document.querySelector('form').addEventListener('submit', loginSubmit);
-</script>
 
   <main class="container">
     <form id="loginForm" class="auth">
-      <h2>🔐 Welcome back</h2>
-      <label for="email">Email Address</label>
-      <input id="email" name="email" type="email" placeholder="Enter your email" required />
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" placeholder="Enter your password" required />
-      <button type="submit">Login to Account</button>
-      <p style="text-align:center;margin-top:20px;color:#666;">No account? <a href="register.html" style="color:var(--brand);font-weight:600;">Create one here</a></p>
+      <h2 data-i18n="login.title">🔐 Welcome back</h2>
+      <label for="email" data-i18n="login.email">Email Address</label>
+      <input id="email" name="email" type="email" placeholder="Enter your email" data-i18n-placeholder="login.emailPlaceholder" required />
+      <label for="password" data-i18n="login.password">Password</label>
+      <input id="password" name="password" type="password" placeholder="Enter your password" data-i18n-placeholder="login.passwordPlaceholder" required />
+      <button type="submit" data-i18n="login.submit">Login to Account</button>
+      <p style="text-align:center;margin-top:20px;color:#666;">
+        <span data-i18n="login.noAccount">No account?</span> 
+        <a href="register.html" style="color:var(--brand);font-weight:600;" data-i18n="login.createAccount">Create one here</a>
+      </p>
     </form>
   </main>
+
+  <script>
+    // Helper function to get translations from the main translations object
+    function getTranslation(key) {
+      const lang = document.documentElement.getAttribute('data-lang') || 'en';
+      const translation = window.translations?.[lang]?.[key] || window.translations?.en?.[key];
+      return translation || key;
+    }
+
+    async function loginSubmit(e) {
+      e.preventDefault();
+      const email = document.querySelector('#email')?.value?.trim();
+      const username = document.querySelector('#username')?.value?.trim() || email;
+      const password = document.querySelector('#password')?.value;
+
+      if (!username || !password) {
+        return alert(getTranslation('login.error.required'));
+      }
+
+      try {
+        const r = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username, password })
+        });
+        
+        const data = await r.json();
+        if (!r.ok) { 
+          return alert(data.error || getTranslation('login.error.failed')); 
+        }
+        
+        location.href = '/profile.html';
+      } catch (err) {
+        console.error('Login error:', err);
+        alert(getTranslation('login.error.network'));
+      }
+    }
+
+    // Initialize the form submission handler
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('loginForm');
+      if (form) {
+        form.addEventListener('submit', loginSubmit);
+      }
+    });
+  </script>
 </body>
 </html>

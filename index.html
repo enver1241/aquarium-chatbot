@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,27 +22,28 @@
 
     <!-- Menü -->
     <nav id="navMenu" class="nav-links" role="navigation">
-      <a id="navHome" href="index.html">Home</a>
-      <a id="navChatbot" href="Chatbot.html">Chatbot</a>
-      <a id="navFeedback" href="feedback.html">Feedback</a>
-      <a id="navLogin" class="btn btn-outline" href="login.html">Login</a>
-      <a id="navRegister" class="btn btn-outline" href="register.html">Register</a>
-      <a id="newChatBtn" class="btn btn-ghost" href="Chatbot.html?new=1">+ New Chat</a>
-      <a id="logoutBtn" class="btn btn-outline" href="#">Logout</a>
-      <a class="btn btn-primary" href="Chatbot.html">Open Chat</a>
+      <a id="navHome" href="index.html" data-i18n="nav.home">Home</a>
+      <a id="navChatbot" href="Chatbot.html" data-i18n="nav.chatbot">Chatbot</a>
+      <a id="navFeedback" href="feedback.html" data-i18n="nav.feedback">Feedback</a>
+      <a id="navLogin" class="btn btn-outline" href="login.html" data-i18n="nav.login">Login</a>
+      <a id="navRegister" class="btn btn-outline" href="register.html" data-i18n="nav.register">Register</a>
+      <a id="newChatBtn" class="btn btn-ghost" href="Chatbot.html?new=1" data-i18n="nav.newChat">+ New Chat</a>
+      <a id="logoutBtn" class="btn btn-outline" href="#" data-i18n="nav.logout">Logout</a>
+      <a class="btn btn-primary" href="Chatbot.html" data-i18n="nav.openChat">Open Chat</a>
+      <button id="langToggle" class="btn btn-outline" aria-label="Toggle language">🌐</button>
     </nav>
   </header>
 
   <main class="container">
     <section class="hero">
-      <h1>Welcome to the Aquarium ChatBot Website</h1>
-      <p>Discover aquatic life, get care tips, and interact with our intelligent bot!</p>
-      <a id="goChatbot" class="btn btn-primary" href="Chatbot.html">Go to ChatBot</a>
+      <h1 data-i18n="home.title">Welcome to the Aquarium ChatBot Website</h1>
+      <p data-i18n="home.subtitle">Discover aquatic life, get care tips, and interact with our intelligent bot!</p>
+      <a id="goChatbot" class="btn btn-primary" href="Chatbot.html" data-i18n="home.goChatbot">Go to ChatBot</a>
     </section>
 
     <section class="container">
-      <h2>About us</h2>
-      <p>
+      <h2 data-i18n="home.about">About us</h2>
+      <p data-i18n="home.aboutText">
         This website is designed for users who want to learn about aquarium creatures.
         Users can ask questions through the AI-powered chatbot and get answers instantly.
         Our project aims to make aquarium maintenance more accessible and fun.

@@ -3,6 +3,34 @@
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+// Toast notification system
+function showToast(message, type = 'info') {
+  // Create toast container if it doesn't exist
+  let toastContainer = $('.toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  
+  // Add to container and set up removal
+  toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('show');
+    
+    // Auto-remove after delay
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300); // Wait for fade out
+    }, 3000);
+  }, 10);
+}
+
 function domReady(fn) {
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", fn, { once: true });

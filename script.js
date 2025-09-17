@@ -66,7 +66,34 @@ const translations = {
     'profile.uploading': 'Uploading...',
     'profile.personalInfo': 'Personal Information',
     'profile.avatar': 'Profile Picture',
-    'profile.avatarHelp': 'Recommended size: 200x200 pixels'
+    'profile.avatarHelp': 'Recommended size: 200x200 pixels',
+    
+    // Feedback page
+    'feedback.title': 'Feedback - AquaLifeAI',
+    'feedback.heading': 'Send us your Feedback',
+    'feedback.form.name': 'Your Name *',
+    'feedback.form.email': 'Your Email *',
+    'feedback.form.message': 'Message / Issue *',
+    'feedback.placeholder.name': 'Your name',
+    'feedback.placeholder.email': 'you@example.com',
+    'feedback.placeholder.message': 'Tell us what\'s up...',
+    'feedback.hint': 'We store your feedback securely to improve AquaLifeAI.',
+    'feedback.submit': 'Send Message',
+    'feedback.sending': 'Sending...',
+    'feedback.success': 'Thank you for your feedback!',
+    'feedback.error.required': 'Please fill all required fields.',
+    'feedback.error.submission': 'Could not send feedback',
+    'feedback.error.network': 'Network error. Please try again.',
+    
+    // Chatbot page
+    'chatbot.title': 'Aquarium ChatBot',
+    'chatbot.askedQuestions': 'Asked Questions',
+    'chatbot.placeholder': 'Type a message...',
+    'chatbot.send': 'Send',
+    'chatbot.typing': 'Typing...',
+    'chatbot.error.network': 'Network error. Please check your connection.',
+    'chatbot.error.empty': 'Please enter a message.',
+    'chatbot.error.long': 'Message is too long. Please keep it under 1000 characters.'
   },
   pl: {
     // Navigation
@@ -134,7 +161,34 @@ const translations = {
     'profile.uploading': 'Przesyłanie...',
     'profile.personalInfo': 'Dane osobowe',
     'profile.avatar': 'Zdjęcie profilowe',
-    'profile.avatarHelp': 'Zalecany rozmiar: 200x200 pikseli'
+    'profile.avatarHelp': 'Zalecany rozmiar: 200x200 pikseli',
+    
+    // Feedback page - Polish
+    'feedback.title': 'Opinie - AquaLifeAI',
+    'feedback.heading': 'Prześlij nam swoją opinię',
+    'feedback.form.name': 'Twoje imię *',
+    'feedback.form.email': 'Twój email *',
+    'feedback.form.message': 'Wiadomość / Problem *',
+    'feedback.placeholder.name': 'Twoje imię',
+    'feedback.placeholder.email': 'twoj@email.com',
+    'feedback.placeholder.message': 'Napisz nam, co myślisz...',
+    'feedback.hint': 'Przechowujemy Twoją opinię w sposób bezpieczny, aby ulepszać AquaLifeAI.',
+    'feedback.submit': 'Wyślij wiadomość',
+    'feedback.sending': 'Wysyłanie...',
+    'feedback.success': 'Dziękujemy za opinię!',
+    'feedback.error.required': 'Proszę wypełnić wszystkie wymagane pola.',
+    'feedback.error.submission': 'Nie udało się wysłać opinii',
+    'feedback.error.network': 'Błąd sieci. Proszę spróbować ponownie.',
+    
+    // Chatbot page - Polish
+    'chatbot.title': 'Czatbot Akwarystyczny',
+    'chatbot.askedQuestions': 'Zadane pytania',
+    'chatbot.placeholder': 'Wpisz wiadomość...',
+    'chatbot.send': 'Wyślij',
+    'chatbot.typing': 'Pisanie...',
+    'chatbot.error.network': 'Błąd sieci. Sprawdź swoje połączenie.',
+    'chatbot.error.empty': 'Proszę wpisać wiadomość.',
+    'chatbot.error.long': 'Wiadomość jest zbyt długa. Maksymalnie 1000 znaków.'
   }
 };
 

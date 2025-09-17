@@ -143,7 +143,13 @@ app.use(session({
   cookie: { sameSite: 'lax', secure: false, maxAge: 24 * 60 * 60 * 1000 },
 }));
 
-const isAuthed = (req) => !!(req.session && req.session.user);
+// Update the isAuthed function to work as proper middleware
+const requireAuth = (req, res, next) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  next();
+};
 
 // --- Health & Diag
 app.get('/health', (_req, res) => res.type('text/plain').send('ok'));
@@ -209,7 +215,7 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.get('/api/me', (req, res) => {
-  res.json({ user: isAuthed(req) ? req.session.user : null });
+  res.json({ user: req.session && req.session.user ? req.session.user : null });
 });
 
 // Configure multer for file uploads
@@ -263,8 +269,7 @@ app.post('/api/test-upload', upload.single('testfile'), (req, res) => {
 });
 
 // --- Profile
-app.get('/api/profile', (req, res) => {
-  if (!isAuthed(req)) return res.status(401).json({ error: 'Not authenticated' });
+app.get('/api/profile', requireAuth, (req, res) => {
   const user = req.session.user;
   res.json({
     id: user.id,
@@ -274,8 +279,7 @@ app.get('/api/profile', (req, res) => {
   });
 });
 
-app.put('/api/profile', (req, res) => {
-  if (!isAuthed(req)) return res.status(401).json({ error: 'Not authenticated' });
+app.put('/api/profile', requireAuth, (req, res) => {
   const { display_name = '' } = req.body || {};
   const userId = req.session.user.id;
   
@@ -289,106 +293,41 @@ app.put('/api/profile', (req, res) => {
   }
 });
 
-// Handle avatar upload with cache busting
-app.post('/api/profile/avatar', isAuthed, (req, res, next) => {
-  // Add cache busting headers
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.setHeader('Surrogate-Control', 'no-store');
-  
-  console.log('=== AVATAR UPLOAD REQUEST ===');
-  console.log('Session user:', req.session.user);
-  console.log('Request headers:', req.headers);
-  
-  // Use multer's error handling
-  upload.single('avatar')(req, res, function(err) {
-    if (err) {
-      console.error('Multer upload error:', err);
-      return res.status(400).json({ error: err.message || 'File upload failed' });
-    }
-    
-    if (!req.file) {
-      console.log('No file in request or invalid file type');
-      console.log('Request files:', req.files);
-      console.log('Request body:', req.body);
-      return res.status(400).json({ error: 'No file uploaded or invalid file type' });
-    }
-
-    console.log('File uploaded successfully:', {
-      originalname: req.file.originalname,
-      filename: req.file.filename,
-      path: req.file.path,
-      size: req.file.size,
-      mimetype: req.file.mimetype
-    });
-    
-    // Continue to the next middleware
-    next();
-  });
-}, async (req, res) => {
-
+// Handle avatar upload
+app.post('/api/upload-avatar', requireAuth, upload.single('avatar'), (req, res) => {
   try {
-    const userId = req.session.user.id;
-    
-    // Get the filename from the stored file (req.file.filename is set by multer)
-    const filename = req.file.filename;
-    const avatarUrl = '/uploads/' + filename;
-    
-    // Ensure the file is properly moved to the final location
-    const tempPath = req.file.path;
-    const targetPath = path.join(uploadsDir, filename);
-    
-    // If the file is already in the right place, no need to move it
-    if (tempPath !== targetPath) {
-      fs.renameSync(tempPath, targetPath);
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
     }
-    
-    console.log('Updating user profile with avatar:', { userId, avatarUrl });
-    
-    // First, get the old avatar URL to delete it later
-    const oldAvatar = db.prepare('SELECT avatar_url FROM users WHERE id = ?').get(userId);
-    
-    // Update user's avatar in database
+
+    const userId = req.session.user.id;
+    const avatarUrl = `/uploads/${req.file.filename}`;
+
+    // Update user's avatar URL in the database
     const stmt = db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?');
     const result = stmt.run(avatarUrl, userId);
-    
-    console.log('Database update result:', result);
-    
+
     if (result.changes === 0) {
-      throw new Error('User not found or no changes made');
+      // If no rows were updated, clean up the file
+      fs.unlinkSync(req.file.path);
+      return res.status(404).json({ error: 'User not found' });
     }
-    
-    // Delete old avatar file if it exists and is not the default
-    if (oldAvatar && oldAvatar.avatar_url && !oldAvatar.avatar_url.includes('default-avatar')) {
-      const oldAvatarPath = path.join(__dirname, 'public', oldAvatar.avatar_url);
-      if (fs.existsSync(oldAvatarPath)) {
-        fs.unlink(oldAvatarPath, (err) => {
-          if (err) console.error('Error deleting old avatar:', err);
-          else console.log('Old avatar deleted:', oldAvatarPath);
-        });
-      }
-    }
-    
-    // Update session
+
+    // Update the session with the new avatar URL
     req.session.user.avatar_url = avatarUrl;
     
-    console.log('Avatar update successful, sending response');
-    
     res.json({ 
-      ok: true, 
-      avatar_url: avatarUrl 
+      success: true, 
+      avatarUrl: avatarUrl 
     });
+
   } catch (error) {
     console.error('Avatar upload error:', error);
-    // Clean up the uploaded file if there was an error
+    // Clean up the file if there was an error
     if (req.file && req.file.path) {
-      console.log('Cleaning up uploaded file:', req.file.path);
-      fs.unlink(req.file.path, (unlinkErr) => {
-        if (unlinkErr) console.error('Error cleaning up file:', unlinkErr);
-      });
+      fs.unlinkSync(req.file.path);
     }
-    res.status(500).json({ error: 'Failed to update avatar', details: error.message });
+    res.status(500).json({ error: 'Failed to upload avatar' });
   }
 });
 

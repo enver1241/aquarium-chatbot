@@ -387,89 +387,42 @@ function wireProfilePage() {
       
       try {
         console.log('Starting file upload...');
-        // Add cache busting parameter to the URL
-        const uploadUrl = '/api/profile/avatar?_=' + Date.now();
+        const uploadUrl = '/api/upload-avatar';
         
-        const res = await fetch(uploadUrl, {
+        const response = await fetch(uploadUrl, {
           method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          },
+          credentials: 'include',
           body: formData
         });
         
-        console.log('Upload response status:', res.status);
+        console.log('Upload response status:', response.status);
         
-        if (!res.ok) {
-          let errorText;
-          try {
-            const errorData = await res.json();
-            errorText = errorData.error || errorData.message || 'Unknown error';
-          } catch (e) {
-            errorText = await res.text() || 'Unknown error';
-          }
-          console.error('Upload error response:', errorText);
-          throw new Error(`Upload failed: ${errorText}`);
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.error || 'Upload failed');
         }
         
-        const data = await res.json();
-        console.log('Upload response data:', data);
+        const result = await response.json();
+        console.log('Upload response data:', result);
         
-        if (data && data.avatar_url) {
-          // Update avatar image with cache busting
+        if (result && result.avatarUrl) {
+          // Update the avatar image with cache busting
           const avatarImg = document.getElementById("avatarImg");
           if (avatarImg) {
             const timestamp = Date.now();
-            // Ensure we have a proper URL
-            let newUrl = data.avatar_url;
-            if (!newUrl.startsWith('http') && !newUrl.startsWith('/')) {
-              newUrl = '/' + newUrl;
-            }
-            newUrl += `${newUrl.includes('?') ? '&' : '?'}t=${timestamp}`;
+            const newUrl = `${result.avatarUrl}${result.avatarUrl.includes('?') ? '&' : '?'}t=${timestamp}`;
             console.log('Updating avatar image source to:', newUrl);
             
-            // Force reload the image
-            const img = new Image();
-            img.onload = function() {
-              avatarImg.src = newUrl;
-              // Also update the avatar in the navbar if it exists
-              const navAvatar = document.getElementById("navAvatar");
-              if (navAvatar) {
-                navAvatar.src = newUrl;
-                // Force browser to update the image
-                navAvatar.style.display = 'none';
-                navAvatar.offsetHeight; // Trigger reflow
-                navAvatar.style.display = '';
-              }
-              
-              // Force browser to update the main avatar
-              avatarImg.style.display = 'none';
-              avatarImg.offsetHeight; // Trigger reflow
-              avatarImg.style.display = '';
-              
-              // Force a hard reload of the page to ensure all references are updated
-              setTimeout(() => {
-                window.location.reload(true);
-              }, 1000);
-              
-              showToast('Avatar updated successfully!', 'success');
-            };
-            img.onerror = function() {
-              console.error('Failed to load new avatar image');
-              showToast('Avatar updated but preview failed to load. Refreshing page...', 'warning');
-              setTimeout(() => {
-                window.location.reload(true);
-              }, 1000);
-            };
-            img.src = newUrl;
-          } else {
-            showToast('Avatar updated! Refreshing page...', 'success');
-            setTimeout(() => {
-              window.location.reload(true);
-            }, 1000);
+            // Update the image source
+            avatarImg.src = newUrl;
+            
+            // Update navbar avatar if it exists
+            const navAvatar = document.getElementById("navAvatar");
+            if (navAvatar) {
+              navAvatar.src = newUrl;
+            }
+            
+            showToast('Avatar updated successfully!', 'success');
           }
           
           fileInput.value = ''; // Clear file input

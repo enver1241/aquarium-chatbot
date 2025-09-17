@@ -108,7 +108,7 @@ body {
 }
 
 .brand-logo {
-  height: 170px;
+  height: 50px;  /* Reduced from 180px for better mobile display */
   width: auto;
   border-radius: var(--radius-md);
   transition: transform 0.2s ease;
@@ -623,7 +623,7 @@ body {
   }
   
   .brand-logo {
-    height: 14px;
+    height: 32px;  /* Adjusted for better visibility on extra small screens */
   }
   
   .container {
@@ -673,7 +673,7 @@ body {
   }
   
   .brand-logo {
-    height: 20px;
+    height: 40px;  /* Adjusted for better visibility on small screens */
   }
   
   .container {
